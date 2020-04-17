@@ -1,3 +1,5 @@
+-- Camera
+-- Autor: Maciej Puchalski
 #include <stdio.h>
 #include <stdlib.h> // exit()
 #include <string.h> // memset()
