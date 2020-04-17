@@ -7,7 +7,7 @@
 #define SERWER_PORT 4666
 
 
-#define CLIENT_IP "127.0.0.1"
+#define CAMERA_IP "127.0.0.1"
 
 
 
@@ -16,8 +16,8 @@
 int main()
 {
 
-// TO DO podział na wątki w zależności od tego czy serwer jest na IPv6 czy IPv4 
-// lub jedno wpsólne nasłuchiwanie naprzemiennie dla IPv4 i IPv6
+// TO DO podział na wątki w zależności od tego czy bramka jest na IPv6 czy IPv4 
+// lub jedno wspólne nasłuchiwanie naprzemiennie dla IPv4 i IPv6
 
  struct sockaddr_in server =
     {
@@ -65,11 +65,11 @@ int main()
         perror( "recvfrom() ERROR" );
         exit( 1 );
     }
-    printf( "|Server's reply|: %s \n", buffer );
-        char serverAdress[128] = {};
-        printf( "|Client ip: %s port: %d|\n", inet_ntop( AF_INET, & from.sin_addr,serverAdress, sizeof( serverAdress ) ), ntohs( from.sin_port ) );
+    printf( "|Camera reply|: %s \n", buffer );
+        char gateAdress[128] = {};
+        printf( "|Client ip: %s port: %d|\n", inet_ntop( AF_INET, & from.sin_addr,gateAdress, sizeof( gateAdress ) ), ntohs( from.sin_port ) );
 
-    if( inet_pton( AF_INET, serverAdress, & server.sin_addr ) <= 0 )
+    if( inet_pton( AF_INET, gateAdress, & server.sin_addr ) <= 0 )
     {
         perror( "inet_pton() ERROR" );
         exit( 1 );
@@ -87,4 +87,4 @@ int main()
     
      shutdown( socket_, SHUT_RDWR );
 }
-// gcc client.cpp -g -Wall -o client && ./client
+// gcc camera.cpp -g -Wall -o camera && ./camera
