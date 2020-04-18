@@ -7,6 +7,12 @@
 
 using namespace std;
 
+enum Message_type {
+	EMPTY_MSG,
+	TEST_REQ,
+	TEST_ACK
+};
+
 class Message {
     private:
         char id;
@@ -19,6 +25,26 @@ class Message {
         this->id = id;
         this->msg = msg;
     };
+
+    void set_id (char new_id)
+    {
+	id=new_id;
+    }
+
+    char get_id()
+    {
+	return id;
+    }
+
+    void set_msg (string new_msg)
+    {
+	msg=new_msg;
+    }
+
+    string get_msg()
+    {
+	return msg;
+    }
 
     //id + message
     char * get_code()
@@ -33,15 +59,3 @@ class Message {
     }
 
 };
-
-
-
-
-
-
-
-
-
-
-
-
