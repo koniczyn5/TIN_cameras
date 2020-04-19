@@ -1,35 +1,33 @@
--- Camera
--- Autor: Maciej Puchalski
+//-- Camera
+//-- Autor: Maciej Puchalski
 #include <stdio.h>
 #include <stdlib.h> // exit()
 #include <string.h> // memset()
 #include <arpa/inet.h> // inet_pton()
 #include <sys/socket.h>
 
-#define SERWER_PORT 4666
 
-
-#define CAMERA_IP "127.0.0.1"
-
-
-
-
-
-int main()
+int main(int argc, char *argv[])
 {
+if(argc < 2)
+{
+    fprintf(stderr, "Use: \"%s port\"", argv[0]);
+	exit(1);
+}
+int gatePort = atoi(argv[1]);
 
 // TO DO podział na wątki w zależności od tego czy bramka jest na IPv6 czy IPv4 
 // lub jedno wspólne nasłuchiwanie naprzemiennie dla IPv4 i IPv6
 
- struct sockaddr_in server =
+ struct sockaddr_in gate =
     {
         .sin_family = AF_INET,
-        .sin_port = htons( SERWER_PORT )
+        .sin_port = htons( gatePort )
     };
- struct sockaddr_in server6 =
+ struct sockaddr_in gate6 =
     {
         .sin_family = AF_INET6,
-        .sin_port = htons( SERWER_PORT )
+        .sin_port = htons( gatePort )
     };
 
 
@@ -49,9 +47,9 @@ int main()
     
     char buffer[ 4096 ];
 
-    socklen_t len = sizeof( server );
+    socklen_t len = sizeof( gate );
 
-    if( bind( socket_,( struct sockaddr * ) & server, len ) < 0 )
+    if( bind( socket_,( struct sockaddr * ) & gate, len ) < 0 )
     {
         perror( "bind() ERROR" );
         exit( 3 );
@@ -71,7 +69,7 @@ int main()
         char gateAdress[128] = {};
         printf( "|Client ip: %s port: %d|\n", inet_ntop( AF_INET, & from.sin_addr,gateAdress, sizeof( gateAdress ) ), ntohs( from.sin_port ) );
 
-    if( inet_pton( AF_INET, gateAdress, & server.sin_addr ) <= 0 )
+    if( inet_pton( AF_INET, gateAdress, & gate.sin_addr ) <= 0 )
     {
         perror( "inet_pton() ERROR" );
         exit( 1 );
