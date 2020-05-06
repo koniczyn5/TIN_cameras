@@ -9,3 +9,4 @@ class Test_req_message: public Message {
     Test_req_message (char id) : Message (id) {};
 
 };
+

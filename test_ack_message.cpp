@@ -10,6 +10,7 @@ class Test_ack_message: public Message {
     Test_ack_message (char id, int num) : Message (id)
     {
         set_num(num);
+        set_length(2);
     };
     void set_num (char new_num)
     {
@@ -20,11 +21,12 @@ class Test_ack_message: public Message {
     {
         return num;
     }
-    string get_code()
+    char * get_code()
     {
-        string arr;
-        arr.push_back(id);
-        arr.push_back(num+48);
+        char *arr = new char[get_length()];
+        arr[0] = get_id();
+        arr[1] = get_num()+48;
         return arr;
     }
 };
+
