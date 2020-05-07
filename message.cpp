@@ -6,7 +6,9 @@ using namespace std;
 enum Message_type {
 	EMPTY_MSG,
 	TEST_REQ,
-	TEST_ACK
+	TEST_ACK,
+	CONF_REQ, 
+	CONF_ACK
 };
 
 class Message {
