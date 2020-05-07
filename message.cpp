@@ -12,24 +12,19 @@ enum Message_type {
 class Message {
     private:
         char id;
-        char * msg;
-        //char * code;
-        int length;
+        char *msg;
     public:
 
     //constructors
     Message (char id)
     {
         set_id(id);
-        this->msg = nullptr;
-        this->length = 1;
+        this->msg = NULL;
     }
-    Message (char id, char * msg, int length)
+    Message (char id, char *msg)
     {
         set_id(id);
         set_msg(msg);
-        set_length(length);
-        //coding();
     };
 
     void set_id (char new_id)
@@ -52,31 +47,43 @@ class Message {
         return msg;
     }
 
-    void set_length (int new_length)
-    {
-        length=new_length + 1;
-    }
-
-    int get_length()
-    {
-        return length;
-    }
-
     char * get_code()
     {
-        char *arr = new char[length];
+        char *arr = new char[1+sizeof(msg)];
         arr[0] = get_id();
-        int n = length - 1;
-        if(n>0){
-            for(int i=0;i<n;i++) {
-                arr[i+1] = msg[i];
-            }
-        }
+        memcpy(arr+1,msg,sizeof(msg));
         return arr;
     }
 };
 
+class Test_ack_message: public Message {
+    private:
+        char id;
+        char num;
+    public:
+    Test_ack_message (char num) : Message (TEST_ACK)
+    {
+        set_num(num);
+    }
 
+    void set_num (char new_num)
+    {
+        num=new_num;
+    }
+
+    char get_num()
+    {
+        return num;
+    }
+
+    char * get_code()
+    {
+        char *arr = new char[2];
+        arr[0] = get_id();
+        arr[1] = get_num();
+        return arr;
+    }
+};
 
 
 
