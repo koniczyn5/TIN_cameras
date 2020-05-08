@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-g -Wall
+CFLAGS= -std=c++11 -g -Wall
 
 all: camera gate
 
