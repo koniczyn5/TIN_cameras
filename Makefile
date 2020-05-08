@@ -1,13 +1,13 @@
 CC=g++
 CFLAGS=-g -Wall
 
-all: camera bramka
+all: camera gate
 
 camera: camera.cpp
 	$(CC) $(CFLAGS) -o camera camera.cpp
 
-bramka: bramka.cpp
+gate: gate.cpp
 	$(CC) $(CFLAGS) -o bramka bramka.cpp
 
 clean:
-	rm camera bramka
+	rm camera gate
