@@ -7,7 +7,7 @@ camera: camera.cpp
 	$(CC) $(CFLAGS) -o camera camera.cpp
 
 gate: gate.cpp
-	$(CC) $(CFLAGS) -o bramka bramka.cpp
+	$(CC) $(CFLAGS) -o gate gate.cpp
 
 clean:
 	rm camera gate
