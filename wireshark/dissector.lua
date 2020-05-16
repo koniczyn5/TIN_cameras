@@ -33,7 +33,33 @@ function cameralink_proto.dissector(buffer,pinfo,tree)
         pinfo.cols.info:append(" CONF_ACK")
         local testresult = buffer(1,1):uint()
 	subtree:add(buffer(0,1),"Auto test result: " .. testresult)
-	
+    elseif msg_type == 5 then
+	subtree:add(buffer(0,1),"INST_REQ")
+        pinfo.cols.info:append("INST_REQ")
+	subtree:add(buffer(0,1),"Password: " .. buffer(1,4)
+    elseif msg_type == 6 then
+	subtree:add(buffer(0,1),"INST_ACK")
+        pinfo.cols.info:append("INST_ACK")
+    elseif msg_type == 7 then
+	subtree:add(buffer(0,1),"DISC_REQ")
+        pinfo.cols.info:append("DISC_REQ")
+    elseif msg_type == 8 then
+	subtree:add(buffer(0,1),"DISC_ACK")
+        pinfo.cols.info:append("DISC_ACK")
+    elseif msg_type == 9 then
+	subtree:add(buffer(0,1),"DATA_MSG")
+        pinfo.cols.info:append("DATA_MSG")
+	local packet = buffer(1,4):le_uint()
+	local maxPackets = buffer(5,4):le_uint()
+	subtree:add(buffer(0,1),"Packet: " .. packet .."/" .. maxPackets)
+    elseif msg_type == 10 then
+	subtree:add(buffer(0,1),"DATA_RQT")
+        pinfo.cols.info:append("DATA_RQT")
+	local requestedPacket = buffer(1,4):le_uint()
+	subtree:add(buffer(0,1),"Requested packet: " .. requestedPacket)
+    elseif msg_type == 11 then
+	subtree:add(buffer(0,1),"DATA_ACK")
+        pinfo.cols.info:append("DATA_ACK")
     else
         subtree:add(buffer(0,1),"UNKNOWN_MSG " .. msg_type)
         pinfo.cols.info:append(" UNKNOWN_MSG")
