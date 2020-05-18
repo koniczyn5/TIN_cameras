@@ -2,21 +2,64 @@
 //-- Autor: Maciej Puchalski
 #include "camera.h"
 #include <pthread.h>
+#include <ctime>
+#include <algorithm>
+#include <string>
+#include <stdio.h>
 #define NUM_THREADS 5
-void *listenerIp4(void *data)
+
+int gatePort4;
+int gatePort6;
+
+void saveLog(string logText, bool ipv6, string ipAdress)
+{
+    fstream file;
+    time_t now = time(0);
+    string log = std::ctime(&now);
+    log.erase(std::remove(log.begin(), log.end(), '\n'), log.end());
+    log = log + " : port = " + std::to_string(gatePort4) + " : adress ip=" + ipAdress + " : ";
+    log = log + logText + "\n";
+    cout << log;
+    file.open("cameraLog.txt", fstream::app);
+    file << log;
+    file.close();
+}
+void loadFromFile(string filename, char *gateAdress)
+{
+    ifstream file;
+    file.open(filename);
+    file >> gateAdress;
+    file.close();
+}
+void *listenerIpv4(void *data)
 {
     Camera camera;
     sockaddr_in *gate = (sockaddr_in *)data;
-    const int socket_4 = socket(AF_INET, SOCK_DGRAM, 0);
-    if (socket_4 < 0)
+    const int socket_ = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if (socket_ < 0)
     {
         perror("socket() ERROR");
         exit(1);
     }
     socklen_t len4 = sizeof(*gate);
+    char test[128];
+    inet_ntop(AF_INET, &gate->sin_addr, test, sizeof(test));
+    char zeroAdress[128] = {"0.0.0.0"};
     char gateAdress[128] = {};
+    char from[128] = {};
+    loadFromFile("gateAdress4.config", gateAdress);
 
-    if (bind(socket_4, (struct sockaddr *)&(*gate), len4) < 0)
+    if (strcmp(gateAdress, "") == 0)
+    {
+        strcpy(gateAdress, zeroAdress);
+    }
+    else
+    {
+        inet_pton(AF_INET, gateAdress, &gate->sin_addr);
+    }
+
+    if (bind(socket_, (struct sockaddr *)&(*gate), len4) < 0)
     {
         perror("bind() ERROR");
         exit(3);
@@ -25,100 +68,146 @@ void *listenerIp4(void *data)
 
     while (1)
     {
-        if (recvfrom(socket_4, buffer, sizeof(buffer), 0, (struct sockaddr *)&gate, &len4) < 0)
+        cout << "waiting for gate msg\n";
+        if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&*gate), &len4) < 0)
         {
             perror("recvfrom() ERROR");
             exit(1);
         }
+        inet_ntop(AF_INET, &gate->sin_addr, from, sizeof(gateAdress));
         if (buffer[0] == INST_REQ)
         {
-
-            memset(buffer, 0, sizeof(buffer));
-            Message msg(INST_REQ, "okon", 4);
-            strcpy(buffer, msg.get_code());
-
-            if (sendto(socket_4, buffer, 5, 0, (struct sockaddr *)&gate, len4) < 0)
+            if (strcmp(gateAdress, zeroAdress))
             {
-                perror("sendto() ERROR");
-                exit(5);
-            }
-            memset(buffer, 0, sizeof(buffer));
-
-            if (recvfrom(socket_4, buffer, sizeof(buffer), 0, (struct sockaddr *)&gate, &len4) < 0)
-            {
-                perror("recvfrom() ERROR");
-                exit(1);
-            }
-            char adress[128];
-            inet_ntop(AF_INET, &gate->sin_addr, adress, sizeof(gateAdress));
-            char code[4096] = {"polaczono\n"};
-            if (buffer[0] = INST_ACK)
-            {
-                printf("udane parowanie\n");
-                ofstream file;
-                file.open("gateAdress.config");
-
-                char bufferWrite[sizeof(sockaddr_in)];
-                memcpy(bufferWrite, &gate, sizeof(sockaddr_in));
-                file.write(bufferWrite, sizeof(sockaddr_in));
-                break;
+                buffer[0] = IS_PAIR;
+                if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&*gate), len4) < 0)
+                {
+                    perror("sendto() ERROR");
+                    exit(5);
+                }
             }
             else
             {
-                printf("nieudane parowanie\n");
-                memset(gateAdress, 0, sizeof(gateAdress));
+                inet_ntop(AF_INET, &gate->sin_addr, gateAdress, sizeof(gateAdress));
+                saveLog("inst req", false, gateAdress);
+                memset(buffer, 0, sizeof(buffer));
+                Message msg(INST_HASH, "okon", 4);
+                strcpy(buffer, msg.get_code());
+
+                if (sendto(socket_, buffer, 5, 0, (struct sockaddr *)(&*gate), len4) < 0)
+                {
+                    perror("sendto() ERROR");
+                    exit(5);
+                }
+
+                saveLog("install code sent", false, gateAdress);
+                memset(buffer, 0, sizeof(buffer));
+
+                if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&*gate), &len4) < 0)
+                {
+                    perror("recvfrom() ERROR");
+                    exit(1);
+                }
+
+                if (buffer[0] == INST_ACK)
+                {
+
+                    saveLog("succesful pairing (inst ack)", false, gateAdress);
+                    cout << "udane parowanie\n";
+                    ofstream file;
+                    file.open("gateAdress4.config");
+                    file.write(gateAdress, sizeof(gateAdress));
+                }
+                else
+                {
+                    saveLog("failed pairing", false, gateAdress);
+                    cout << "nieudane parowanie\n";
+                    memset(gateAdress, 0, sizeof(gateAdress));
+                }
             }
         }
-        else if (buffer[0] == CONF_REQ)
+        else if (strcmp(gateAdress, zeroAdress) && strcmp(gateAdress, from) == 0)
         {
-            camera.configure(buffer);
-            memset(buffer, 0, sizeof(buffer));
-            buffer[0] = CONF_ACK;
-            if (sendto(socket_4, buffer, strlen(buffer), 0, (struct sockaddr *)&gate, len4) < 0)
+
+            if (buffer[0] == CONF_REQ)
+            {
+
+                saveLog("conf req", false, gateAdress);
+                camera.configure(buffer);
+                memset(buffer, 0, sizeof(buffer));
+                buffer[0] = CONF_ACK;
+                if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&*gate), len4) < 0)
+                {
+                    perror("sendto() ERROR");
+                    exit(5);
+                }
+                saveLog("conf ack", false, gateAdress);
+                memset(buffer, 0, sizeof(buffer));
+            }
+            else if (buffer[0] == TEST_REQ)
+            {
+                memset(buffer, 0, sizeof(buffer));
+                camera.test(buffer);
+                saveLog("test req", false, gateAdress);
+                if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&*gate), len4) < 0)
+                {
+                    perror("sendto() ERROR");
+                    exit(5);
+                }
+                saveLog("test ack", false, gateAdress);
+                memset(buffer, 0, sizeof(buffer));
+            }
+            else if (buffer[0] == DISC_REQ)
+            {
+                saveLog("disc req", false, gateAdress);
+                buffer[0] = DISC_ACK;
+                memcpy(gateAdress, zeroAdress, sizeof(gateAdress));
+                ifstream file;
+                remove("gateAdress4.config");
+                if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&*gate), len4) < 0)
+                {
+                    perror("sendto() ERROR");
+                    exit(5);
+                }
+                saveLog("disc ack", false, gateAdress);
+                memset(buffer, 0, sizeof(buffer));
+            }
+        }
+        else
+        {
+            inet_ntop(AF_INET, &gate->sin_addr, gateAdress, sizeof(gateAdress));
+            saveLog("no pair", false, gateAdress);
+            memcpy(gateAdress, zeroAdress, sizeof(gateAdress));
+            buffer[0] = NO_PAIR;
+            if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&*gate), len4) < 0)
             {
                 perror("sendto() ERROR");
                 exit(5);
             }
             memset(buffer, 0, sizeof(buffer));
-        }
-        else if (buffer[0] == TEST_REQ)
-        {
-            memset(buffer, 0, sizeof(buffer));
-            camera.test(buffer);
-            if (sendto(socket_4, buffer, strlen(buffer), 0, (struct sockaddr *)&gate, len4) < 0)
-            {
-                perror("sendto() ERROR");
-                exit(5);
-            }
-            break;
-        }
-        else if (buffer[0] == DISC_REQ)
-        {
-            buffer[0] = DISC_ACK;
-            memset(&gate->sin_addr, 0, sizeof(gate->sin_addr));
-            if (sendto(socket_4, buffer, strlen(buffer), 0, (struct sockaddr *)&gate, len4) < 0)
-            {
-                perror("sendto() ERROR");
-                exit(5);
-            }
         }
     }
 
-    shutdown(socket_4, SHUT_RDWR);
+    shutdown(socket_, SHUT_RDWR);
 
     pthread_exit(NULL);
 }
-void *listenerIp6(void *threadid)
+
+void *photoSender(void *data)
 {
-    //if (bind(socket_6, (struct sockaddr *)&gate6, len6) < 0)
-    {
-        //  perror("bind() ERROR");
-        // exit(3);
-    }
 
     pthread_exit(NULL);
 }
 
+void *conectionResponser()
+{
+    pthread_exit(NULL);
+}
+
+void *listenerIpv6(void *data)
+{
+    pthread_exit(NULL);
+}
 int main(int argc, char *argv[])
 {
     pthread_t threads[NUM_THREADS];
@@ -128,110 +217,24 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Use: \"%s port\"", argv[0]);
         exit(1);
     }
-    int gatePort4 = atoi(argv[1]);
-    int gatePort6 = atoi(argv[2]);
-    // TO DO podział na wątki w zależności od tego czy bramka jest na IPv6 czy IPv4
-    // lub jedno wspólne nasłuchiwanie naprzemiennie dla IPv4 i IPv6
+    gatePort4 = atoi(argv[1]);
+    gatePort6 = atoi(argv[2]);
 
-    struct sockaddr_in gate =
-        {
-            .sin_family = AF_INET,
-            .sin_port = htons(gatePort4)};
-    struct sockaddr_in gate6 =
-        {
-            .sin_family = AF_INET6,
-            .sin_port = htons(gatePort6)};
-
-    const int socket_6 = socket(AF_INET6, SOCK_DGRAM, 0);
-
-    if (socket_6 < 0)
+    struct sockaddr_in gate4
     {
-        perror("socket() ERROR");
-        exit(1);
-    }
-    cout << (struct sockaddr *)&gate << endl;
-    socklen_t len6 = sizeof(gate6);
-    pthread_create(&threads[0], NULL, listenerIp4, &gate);
-    //   pthread_create(&threads[1], NULL,listenerIp6, &gate6);
+        .sin_family = AF_INET,
+        .sin_port = htons(gatePort4)
+    };
+    struct sockaddr_in6 gate6
+    {
+        .sin6_family = AF_INET6,
+        .sin6_port = htons(gatePort6)
+    };
+
+    pthread_create(&threads[0], NULL, listenerIpv4, &gate4);
+    //   pthread_create(&threads[1], NULL,listenerIpv6, &gate6);
     while (1)
         ;
     return 0;
-
-    struct sockaddr_in from = {};
-    //instalacja
-    char gateAdress[128] = {};
-    /*
-    if(argc>3 && argv[3]==std::string("-i"))
-    {
-    while (1)
-    {
-
-        memset(buffer, 0, sizeof(buffer));
-        printf("Waiting for connection...\n");
-
-        if (recvfrom(socket_4, buffer, sizeof(buffer), 0, (struct sockaddr *)&from, &len4) < 0)
-        {
-            perror("recvfrom() ERROR");
-            exit(1);
-        }
-        printf("%s", buffer);
-        //int port=ntohs(from.sin_port);        
-        printf("|Gate ip: %s port: %d|\n", inet_ntop(AF_INET, &from.sin_addr, gateAdress, sizeof(gateAdress)), ntohs(from.sin_port));
-        
-        if (inet_pton(AF_INET, gateAdress, &gate.sin_addr) <= 0)
-        {
-            perror("inet_pton() ERROR");
-            exit(1);
-        }
-        memset(buffer, 0, sizeof(buffer));
-        Message msg(0, "okon",4);
-        strcpy(buffer,msg.get_code());
-        //  strncpy(buffer, "nawiazano polaczenie", sizeof(buffer));
-        //std::cout <<"wiadomosc to :"<< msg.get_msg();
-        //wysyłać przez serializowaną classe messages
-        if (sendto(socket_4, buffer, 5, 0, (struct sockaddr *)&from, len4) < 0)
-        {
-            perror("sendto() ERROR");
-            exit(5);
-        }
-        memset(buffer, 0, sizeof(buffer));
-        
-        if (recvfrom(socket_4, buffer, sizeof(buffer), 0, (struct sockaddr *)&gate, &len4) < 0)
-        {
-            perror("recvfrom() ERROR");
-            exit(1);
-        }
-        char adress[128];
-        inet_ntop(AF_INET, &from.sin_addr, adress, sizeof(gateAdress));
-        char code[4096]={"polaczono\n"};
-        if (strcmp(buffer,code)==0 && strcmp(gateAdress,adress)==0)
-        {
-            printf("udane parowanie\n");
-            ofstream file;
-            file.open("gateAdress.conf");
-
-            char bufferWrite[sizeof(sockaddr_in)];
-            memcpy(bufferWrite,&gate,sizeof(sockaddr_in));
-            file.write(bufferWrite,sizeof(sockaddr_in));
-            break;
-        }
-        else
-        {
-            printf("nieudane parowanie\n");
-            memset( gateAdress, 0, sizeof( gateAdress ) );
-            gate.sin_port =htons(gatePort4);
-        }
-    }
-    printf("%s",buffer);
-    printf("%s", gateAdress);
-    }else
-    {
-            ifstream file;
-            file.open("gateAdress.conf");
-            char bufferRead[sizeof(sockaddr_in)];
-            file.read(bufferRead,sizeof(sockaddr_in));
-            gate = *reinterpret_cast<sockaddr_in*>(bufferRead);
-    }
-    */
 }
 // gcc camera.cpp -g -Wall -pthread -o camera -lstdc++ && ./camera 6666 6667

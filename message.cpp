@@ -10,9 +10,12 @@ enum Message_type {
     CONF_REQ,
     CONF_ACK,
     INST_REQ,
+    INST_HASH,
     INST_ACK,
     DISC_REQ,
-    DISC_ACK
+    DISC_ACK,
+    NO_PAIR,
+    IS_PAIR
 };
 
 class Message {

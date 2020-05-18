@@ -56,6 +56,11 @@ public:
     memcpy(&focalLength,buffer+9,4);
     memcpy(&interval,buffer+13,4);
     memcpy(&jitter,buffer+17,4); 
+    cout << "resHorizonta="<<resHorizontal<<endl;
+    cout << "resVertical="<<resVertical<<endl;
+    cout << "focalLength="<<focalLength<<endl;
+    cout << "interval="<<interval<<endl;
+    cout << "jitter="<<jitter<<endl;
     }
     void test(char buffer[])
     {
