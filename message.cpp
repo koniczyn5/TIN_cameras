@@ -1,92 +1,106 @@
 // Message
 // Autor: Lukasz Rombel
-
-using namespace std;
+#include <string.h>
 
 enum Message_type {
 	EMPTY_MSG,
 	TEST_REQ,
 	TEST_ACK,
-	CONF_REQ, 
+	CONF_REQ,
 	CONF_ACK
 };
 
 class Message {
-    private:
-        char id;
-        char *msg;
-    public:
+private:
+	char id;
+	int msg_size;
+	char * msg;
 
-    //constructors
-    Message (char id)
-    {
-        set_id(id);
-        this->msg = NULL;
-    }
-    Message (char id, char *msg)
-    {
-        set_id(id);
-        set_msg(msg);
-    };
+public:
 
-    void set_id (char new_id)
-    {
-        id=new_id;
-    }
+	//constructors
+	Message(char id)
+	{
+		set_id(id);
+		int msg_size = 0;
+		msg = nullptr;
+	}
+	Message(char new_id, char new_msg[], int new_msg_size)
+	{
+		set_id(new_id);
+		set_msg_size(new_msg_size);
+		char * arr = new char[get_msg_size()];
+		msg = arr;
+		set_msg(new_msg);
+	};
+	//Destructor
+	~Message()
+	{
+		delete msg;
+	}
+	//getters and setters
+	void set_id(char new_id)
+	{
+		this->id = new_id;
+	}
 
-    char get_id()
-    {
-        return id;
-    }
+	char get_id()
+	{
+		return id;
+	}
 
-    void set_msg (char * new_msg)
-    {
-        msg=new_msg;
-    }
+	void set_msg_size(char new_msg_size)
+	{
+		this->msg_size = new_msg_size;
+	}
 
-    char * get_msg()
-    {
-        return msg;
-    }
+	char get_msg_size()
+	{
+		return msg_size;
+	}
 
-    char * get_code()
-    {
-        char *arr = new char[1+sizeof(msg)];
-        arr[0] = get_id();
-        memcpy(arr+1,msg,sizeof(msg));
-        return arr;
-    }
+	void set_msg(char new_msg[])
+	{
+		int x = get_msg_size();
+		memcpy(msg, new_msg, msg_size);
+	}
+	//methods
+	char * get_code()
+	{
+		char *arr = new char[1 + msg_size];
+		arr[0] = get_id();
+		memcpy(arr + 1, msg, msg_size);
+		return arr;
+	}
 };
 
-class Test_ack_message: public Message {
-    private:
-        char id;
-        char num;
-    public:
-    Test_ack_message (char num) : Message (TEST_ACK)
-    {
-        set_num(num);
-    }
+class Test_ack_message : public Message {
+private:
+	char id;
+	char num;
+public:
+	Test_ack_message(char num) : Message(TEST_ACK)
+	{
+		set_num(num);
+	}
 
-    void set_num (char new_num)
-    {
-        num=new_num;
-    }
+	void set_num(char new_num)
+	{
+		num = new_num;
+	}
 
-    char get_num()
-    {
-        return num;
-    }
+	char get_num()
+	{
+		return num;
+	}
 
-    char * get_code()
-    {
-        char *arr = new char[2];
-        arr[0] = get_id();
-        arr[1] = get_num();
-        return arr;
-    }
+	char * get_code()
+	{
+		char *arr = new char[2];
+		arr[0] = get_id();
+		arr[1] = get_num();
+		return arr;
+	}
 };
-
-
 
 
