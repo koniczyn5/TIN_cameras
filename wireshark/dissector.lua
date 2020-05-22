@@ -66,6 +66,12 @@ function cameralink_proto.dissector(buffer,pinfo,tree)
 	local filenameSize = buffer(1,4):le_uint()
 	local maxPackets = buffer(5,4):le_uint()
 	subtree:add(buffer(0,1),"Number of packets: " .. maxPackets ..". Filename: " .. buffer(9,filenameSize))
+    elseif msg_type == 13 then
+	subtree:add(buffer(0,1),"NO_PAIR")
+        pinfo.cols.info:append("NO_PAIR")
+    elseif msg_type == 14 then
+	subtree:add(buffer(0,1),"IS_PAIR")
+        pinfo.cols.info:append("IS_PAIR")
     else
         subtree:add(buffer(0,1),"UNKNOWN_MSG " .. msg_type)
         pinfo.cols.info:append(" UNKNOWN_MSG")
