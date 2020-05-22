@@ -2,6 +2,7 @@
 // Autor: Lukasz Rombel
 #include <string.h>
 #include <fstream>
+#include <iostream>
 //To Do: delete allocated memory
 
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
@@ -11,65 +12,128 @@ class fileMessage {
 private:
 	
 	int package_size = 512;
-	int buffer_size = 0;
 	int package_amount = 0;
 	int last_package_size = 0;
-	char id = '\0';
-	char * file_code;
+	char id;
 	char ** packaged_code;
-public:
 
+public:
 	//constructors
 	fileMessage(char id, const char * file_path)
 	{
 		set_id(id);
-		fstream file_buffer;
-		file_buffer.open(file_path, ios::in | ios::out | ios::binary);
+		std::fstream file_buffer;
+		file_buffer.open(file_path, std::ios::in | std::ios::out | std::ios::binary);
 
 		try {
 			if (file_buffer.is_open())
 			{
-				convertFstreamToCharArray(file_buffer);
-				packageValues();
-				packageFileCode();
+				//initialize temporary array buffer that reads file
+				file_buffer.seekg(0, file_buffer.end);
+				int size = file_buffer.tellg();
+				char * temp_arr = new char[size];
+				file_buffer.seekg(0, std::ios::beg);
+				file_buffer.read(temp_arr, size);
+
+				//initialize package_amount and last_package_size
+				set_package_amount(((int)(size / package_size) + 1));
+				set_last_package_size((int)(size - (package_amount - 1) * package_size));
+
+				//initialize packaged_code pointer array
+				packaged_code = new char *[package_amount];
+				for (int i = 0; i < package_amount; i++)
+					packaged_code[i] = new char[package_size + 9];
+
+				//split package into smaller chunks
+				for (int i = 0; i * package_size < size; i++)
+				{
+					packaged_code[i][0] = id;
+					packaged_code[i][1] = ((i + 1) >> 24) & 0xFF;
+					packaged_code[i][2] = ((i + 1) >> 16) & 0xFF;
+					packaged_code[i][3] = ((i + 1) >> 8) & 0xFF;
+					packaged_code[i][4] = (i + 1) & 0xFF;
+					packaged_code[i][5] = (package_amount >> 24) & 0xFF;
+					packaged_code[i][6] = (package_amount >> 16) & 0xFF;
+					packaged_code[i][7] = (package_amount >> 8) & 0xFF;
+					packaged_code[i][8] = package_amount & 0xFF;
+					//copy from temporary buffer array
+					if ((i + 1) * package_size < size)
+						memcpy(packaged_code[i] + 9, temp_arr + (i*get_package_size()), package_size);
+					else
+						memcpy(packaged_code[i] + 9, temp_arr + (i*get_package_size()), last_package_size);
+				}
+				//delete temporary buffer array
+				delete temp_arr;
 			}
 			else
 				throw "File is closed or nonexsistent";
 		}
 		catch (const char * throwmsg)
 		{
-			cerr << throwmsg << endl;
+			std::cerr << throwmsg << std::endl;
 		}
 		file_buffer.close();
 	}
 
-	fileMessage(char id, fstream& file_buffer)
+	fileMessage(char id, std::fstream& file_buffer)
 	{
 		set_id(id);
 		try {
 			if (file_buffer.is_open())
 			{
-				convertFstreamToCharArray(file_buffer);
-				packageValues();
-				packageFileCode();
+				//create temporary array buffer that reads file
+				file_buffer.seekg(0, file_buffer.end);
+				int size = file_buffer.tellg();
+				char * temp_arr = new char[size];
+				file_buffer.seekg(0, std::ios::beg);
+				file_buffer.read(temp_arr, size);
+
+				//initialize package_amount and last_package_size
+				set_package_amount(((int)(size / package_size) + 1));
+				set_last_package_size((int)(size - (package_amount - 1) * package_size));
+
+				//initialize packaged_code pointer array
+				packaged_code = new char *[package_amount];
+				for (int i = 0; i < package_amount; i++)
+					packaged_code[i] = new char[package_size + 9];
+				
+				//split package into smaller chunks
+				for (int i = 0; i * package_size < size; i++)
+				{
+					packaged_code[i][0] = id;
+					packaged_code[i][1] = ((i + 1) >> 24) & 0xFF;
+					packaged_code[i][2] = ((i + 1) >> 16) & 0xFF;
+					packaged_code[i][3] = ((i + 1) >> 8) & 0xFF;
+					packaged_code[i][4] = (i + 1) & 0xFF;
+					packaged_code[i][5] = (package_amount >> 24) & 0xFF;
+					packaged_code[i][6] = (package_amount >> 16) & 0xFF;
+					packaged_code[i][7] = (package_amount >> 8) & 0xFF;
+					packaged_code[i][8] = package_amount & 0xFF;
+					//copy from temporary buffer array
+					if ((i + 1) * package_size < size)
+						memcpy(packaged_code[i] + 9, temp_arr + (i*package_size), package_size);
+					else
+						memcpy(packaged_code[i] + 9, temp_arr + (i*package_size), last_package_size);
+				}
+				//delete temporary buffer array
+				delete temp_arr;
 			}
 			else
 				throw "File is closed or nonexsistent";
 		}
 		catch(const char * throwmsg)
 		{
-			cerr << throwmsg << endl;
+			std::cerr << throwmsg << std::endl;
 		}
 		file_buffer.close();
 	}
 	//Destructor
-	/*~fileMessage()
+	~fileMessage()
 	{
 		for (int i = 0; i < get_package_amount(); i++)
 			delete[] packaged_code[i];
 		delete[] packaged_code;
-		delete file_code;
-	}*/
+	}
 	//getters and setters
 	void set_id(char new_id)
 	{
@@ -91,29 +155,10 @@ public:
 		return package_size;
 	}
 
-	void set_buffer_size(int new_buffer_size)
-	{
-		buffer_size = new_buffer_size;
-	}
-
-	int get_buffer_size()
-	{
-		return buffer_size;
-	}
-
 	void set_packaged_code(char ** new_packaged_code)
 	{
-		packaged_code = new char *[get_package_amount()];
-		for (int i = 0; i < get_package_amount(); i++)
-			packaged_code[i] = new char[get_package_size() + 9];
 		for (int i = 0; i < get_package_amount(); i++)
 			memcpy(packaged_code[i], new_packaged_code[i], get_package_size() + 9);
-	}
-
-	void set_file_code(char new_file_code[])
-	{
-		file_code = new char[get_buffer_size()];
-		memcpy(file_code, new_file_code, get_buffer_size());
 	}
 
 	void set_package_amount(int new_package_amount)
@@ -135,55 +180,7 @@ public:
 	{
 		return last_package_size;
 	}
-	//methods
-	//convert fstream into char *
-	void convertFstreamToCharArray(fstream& file_buffer)
-	{
-		file_buffer.seekg(0, file_buffer.end);
-		int size = file_buffer.tellg();
-		char * arr = new char[size];
-		file_buffer.seekg(0, std::ios::beg);
-		file_buffer.read(arr, size);
-		set_buffer_size(size);
-		set_file_code(arr);
-		delete arr;
-	}
-	//initialize values based on uploaded file
-	void packageValues()
-	{
-		set_package_amount(((int)(buffer_size / package_size) + 1));
-		set_last_package_size((int)(buffer_size - (package_amount - 1)* package_size));
-	}
-	//split file code into smaller packages (packages are labeled from 1 to n)
-	void packageFileCode()
-	{
-		//allocate the array
-		char ** arr = new char*[get_package_amount()];
-		for (int i = 0; i < get_package_amount(); i++)
-			arr[i] = new char[get_package_size()+9];
-		char temparr[521];											//irytuje mnie c++
-		for (int i = 0; i * package_size < buffer_size; i++) 
-		{	
-			temparr[0] = id;
-			temparr[1] = ((i + 1) >> 24) & 0xFF;
-			temparr[2] = ((i + 1) >> 16) & 0xFF;
-			temparr[3] = ((i + 1) >> 8) & 0xFF;
-			temparr[4] = (i + 1) & 0xFF;
-			temparr[5] = (package_amount >> 24) & 0xFF;
-			temparr[6] = (package_amount >> 16) & 0xFF;
-			temparr[7] = (package_amount >> 8) & 0xFF;
-			temparr[8] = package_amount & 0xFF;
-			if ((i + 1) * package_size < buffer_size)
-				memcpy(temparr + 9, file_code + (i*get_package_size()), package_size);
-			else
-				memcpy(temparr + 9, file_code + (i*get_package_size()), last_package_size);
-			arr[i] = temparr;
-		}
-		set_packaged_code(arr);
-		/*for (int i = 0; i < get_package_amount(); i++)
-			delete[] arr[i];
-		delete[] arr;*/
-	}
+
 	//send single data package (packages are labeled from 1 to n)
 	char * sendPackage(int packageId)
 	{
@@ -206,3 +203,7 @@ public:
 	}
 
 };
+
+
+
+
