@@ -2,9 +2,7 @@
 // Autor: Lukasz Rombel
 #include <string.h>
 #include <fstream>
-#include <iostream>
-#include <bitset>
-using namespace std;
+//To Do: delete allocated memory
 
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
 //packages are labeled from 1 to n
@@ -13,18 +11,17 @@ class fileMessage {
 private:
 	
 	int package_size = 512;
-	int buffer_size;
-	int package_amount;
-	int last_package_size;
-	char id;
-
+	int buffer_size = 0;
+	int package_amount = 0;
+	int last_package_size = 0;
+	char id = '\0';
+	char * file_code;
 	char ** packaged_code;
 public:
 
 	//constructors
 	fileMessage(char id, const char * file_path)
 	{
-		cout << file_path << endl;
 		set_id(id);
 		fstream file_buffer;
 		file_buffer.open(file_path, ios::in | ios::out | ios::binary);
@@ -32,9 +29,9 @@ public:
 		try {
 			if (file_buffer.is_open())
 			{
-				char * file_code = convertFstreamToCharArray(file_buffer);
+				convertFstreamToCharArray(file_buffer);
 				packageValues();
-				packageFileCode(file_code);
+				packageFileCode();
 			}
 			else
 				throw "File is closed or nonexsistent";
@@ -52,9 +49,9 @@ public:
 		try {
 			if (file_buffer.is_open())
 			{
-				char * file_code = convertFstreamToCharArray(file_buffer);
+				convertFstreamToCharArray(file_buffer);
 				packageValues();
-				packageFileCode(file_code);
+				packageFileCode();
 			}
 			else
 				throw "File is closed or nonexsistent";
@@ -71,6 +68,7 @@ public:
 		for (int i = 0; i < get_package_amount(); i++)
 			delete[] packaged_code[i];
 		delete[] packaged_code;
+		delete file_code;
 	}*/
 	//getters and setters
 	void set_id(char new_id)
@@ -105,8 +103,17 @@ public:
 
 	void set_packaged_code(char ** new_packaged_code)
 	{
+		packaged_code = new char *[get_package_amount()];
 		for (int i = 0; i < get_package_amount(); i++)
-			memcpy(&packaged_code[i], &new_packaged_code[i], 9 + get_package_size());
+			packaged_code[i] = new char[get_package_size() + 9];
+		for (int i = 0; i < get_package_amount(); i++)
+			memcpy(packaged_code[i], new_packaged_code[i], get_package_size() + 9);
+	}
+
+	void set_file_code(char new_file_code[])
+	{
+		file_code = new char[get_buffer_size()];
+		memcpy(file_code, new_file_code, get_buffer_size());
 	}
 
 	void set_package_amount(int new_package_amount)
@@ -130,7 +137,7 @@ public:
 	}
 	//methods
 	//convert fstream into char *
-	char * convertFstreamToCharArray(fstream& file_buffer)
+	void convertFstreamToCharArray(fstream& file_buffer)
 	{
 		file_buffer.seekg(0, file_buffer.end);
 		int size = file_buffer.tellg();
@@ -138,20 +145,17 @@ public:
 		file_buffer.seekg(0, std::ios::beg);
 		file_buffer.read(arr, size);
 		set_buffer_size(size);
-		return arr;
+		set_file_code(arr);
+		delete arr;
 	}
 	//initialize values based on uploaded file
 	void packageValues()
 	{
 		set_package_amount(((int)(buffer_size / package_size) + 1));
 		set_last_package_size((int)(buffer_size - (package_amount - 1)* package_size));
-		char ** arr = new char*[get_package_amount()];
-		for (int i = 0; i < get_package_amount(); i++)
-			arr[i] = new char[get_package_size() + 9];
-		packaged_code = arr;
 	}
 	//split file code into smaller packages (packages are labeled from 1 to n)
-	void packageFileCode(char *file_code)
+	void packageFileCode()
 	{
 		//allocate the array
 		char ** arr = new char*[get_package_amount()];
@@ -170,13 +174,12 @@ public:
 			temparr[7] = (package_amount >> 8) & 0xFF;
 			temparr[8] = package_amount & 0xFF;
 			if ((i + 1) * package_size < buffer_size)
-				memcpy(&temparr[9], file_code, package_size);
+				memcpy(temparr + 9, file_code + (i*get_package_size()), package_size);
 			else
-				memcpy(&temparr[9], file_code, last_package_size);
+				memcpy(temparr + 9, file_code + (i*get_package_size()), last_package_size);
 			arr[i] = temparr;
 		}
 		set_packaged_code(arr);
-
 		/*for (int i = 0; i < get_package_amount(); i++)
 			delete[] arr[i];
 		delete[] arr;*/
@@ -184,33 +187,22 @@ public:
 	//send single data package (packages are labeled from 1 to n)
 	char * sendPackage(int packageId)
 	{
-		if (packageId < package_amount)
+		if (packageId < get_package_amount())
 		{
 			char * arr = new char[9 + get_package_size()];
-			memcpy(arr, &packaged_code[packageId - 1][0], (9 + get_package_size()));
+			memcpy(arr, packaged_code[packageId - 1], (9 + get_package_size()));
 			return arr;
 		}
-		else if (packageId == package_amount)
+		else if (packageId == get_package_amount())
 		{
 			char * arr = new char[9 + get_last_package_size()];
-			memcpy(arr, &packaged_code[packageId - 1][0], (9 + get_last_package_size()));
+			memcpy(arr, packaged_code[packageId - 1], (9 + get_last_package_size()));
 			return arr;
 		}
 		else
+		{
 			return nullptr;
+		}
 	}
 
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
