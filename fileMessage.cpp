@@ -3,7 +3,7 @@
 #include <string.h>
 #include <fstream>
 #include <iostream>
-//To Do: delete allocated memory
+//To Do: exception handling and tests
 
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
 //packages are labeled from 1 to n
@@ -16,12 +16,16 @@ private:
 	int last_package_size = 0;
 	char id;
 	char ** packaged_code;
+	char * file_name;
+	int file_name_size;
 
 public:
 	//constructors
-	fileMessage(char id, const char * file_path)
+	fileMessage(char id, const char * file_path, char * file_name = nullptr, int file_name_size = 0)
 	{
 		set_id(id);
+		set_file_name_size(file_name_size);
+		set_file_name(file_name);
 		std::fstream file_buffer;
 		file_buffer.open(file_path, std::ios::in | std::ios::out | std::ios::binary);
 
@@ -75,7 +79,7 @@ public:
 		file_buffer.close();
 	}
 
-	fileMessage(char id, std::fstream& file_buffer)
+	fileMessage(char id, std::fstream& file_buffer, char * file_name = nullptr, int file_name_size = 0)
 	{
 		set_id(id);
 		try {
@@ -133,6 +137,8 @@ public:
 		for (int i = 0; i < get_package_amount(); i++)
 			delete[] packaged_code[i];
 		delete[] packaged_code;
+		if (file_name_size)
+			delete file_name;
 	}
 	//getters and setters
 	void set_id(char new_id)
@@ -153,6 +159,30 @@ public:
 	int get_package_size()
 	{
 		return package_size;
+	}
+
+	void set_file_name_size(int new_file_name_size)
+	{
+		file_name_size = new_file_name_size;
+	}
+
+	int get_file_name_size()
+	{
+		return file_name_size;
+	}
+
+	void set_file_name(char new_file_name[])
+	{
+		if (file_name_size)
+		{
+			file_name = new char[file_name_size];
+			memcpy(file_name, new_file_name, file_name_size);
+		}
+	}
+
+	char * get_file_name()
+	{
+		return file_name;
 	}
 
 	void set_packaged_code(char ** new_packaged_code)
@@ -201,8 +231,32 @@ public:
 			return nullptr;
 		}
 	}
-
+	//send information about loaded file (name size/package amount/name)
+	char * sendFileInfo()
+	{
+		char *arr = new char[9 + file_name_size];
+		arr[0] = get_id();
+		arr[1] = (file_name_size >> 24) & 0xFF;
+		arr[2] = (file_name_size >> 16) & 0xFF;
+		arr[3] = (file_name_size >> 8) & 0xFF;
+		arr[4] = file_name_size & 0xFF;
+		arr[5] = (package_amount >> 24) & 0xFF;
+		arr[6] = (package_amount >> 16) & 0xFF;
+		arr[7] = (package_amount >> 8) & 0xFF;
+		arr[8] = package_amount & 0xFF;
+		memcpy(arr + 9, file_name , file_name_size);
+		return arr;
+	}
 };
+
+
+
+
+
+
+
+
+
 
 
 
