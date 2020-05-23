@@ -1,3 +1,5 @@
+// Message
+// Autor: Lukasz Rombel
 #include "fileMessage.cpp"
 #include <filesystem>
 

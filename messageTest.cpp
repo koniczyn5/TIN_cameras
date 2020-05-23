@@ -1,5 +1,6 @@
+// Message
+// Autor: Lukasz Rombel
 #include "message.cpp"
-
 
 #define BOOST_TEST_MODULE MessageTests
 #include <boost/test/included/unit_test.hpp>
@@ -19,4 +20,5 @@ BOOST_AUTO_TEST_CASE(Message_test)
 	BOOST_CHECK_EQUAL(message->get_msg_size(), sizeof(arr));
 	BOOST_CHECK_EQUAL(message->get_code(), arr2);
 
+	delete message;
 }
