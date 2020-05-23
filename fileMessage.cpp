@@ -21,7 +21,7 @@ private:
 
 public:
 	//constructors
-	fileMessage(char id, const char * file_path, char * file_name = nullptr, int file_name_size = 0)
+	fileMessage(char id, const char * file_path, char * file_name, int file_name_size)
 	{
 		set_id(id);
 		set_file_name_size(file_name_size);
@@ -79,7 +79,7 @@ public:
 		file_buffer.close();
 	}
 
-	fileMessage(char id, std::fstream& file_buffer, char * file_name = nullptr, int file_name_size = 0)
+	fileMessage(char id, std::fstream& file_buffer, char * file_name, int file_name_size)
 	{
 		set_id(id);
 		try {
@@ -137,7 +137,7 @@ public:
 		for (int i = 0; i < get_package_amount(); i++)
 			delete[] packaged_code[i];
 		delete[] packaged_code;
-		if (file_name_size)
+		if (!file_name)
 			delete file_name;
 	}
 	//getters and setters
@@ -235,7 +235,7 @@ public:
 	char * sendFileInfo()
 	{
 		char *arr = new char[9 + file_name_size];
-		arr[0] = get_id();
+		arr[0] = 12;
 		arr[1] = (file_name_size >> 24) & 0xFF;
 		arr[2] = (file_name_size >> 16) & 0xFF;
 		arr[3] = (file_name_size >> 8) & 0xFF;
