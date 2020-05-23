@@ -8,6 +8,7 @@ enum Message_type {
 	CONF_REQ,
 	CONF_ACK,
 	INST_REQ,
+	INST_HASH,
 	INST_ACK,
 	DISC_REQ,
 	DISC_ACK,
@@ -70,8 +71,7 @@ public:
 
 	void set_msg(char new_msg[])
 	{
-		int x = get_msg_size();
-		memcpy(msg, new_msg, msg_size);
+		memcpy(msg, new_msg, get_msg_size());
 	}
 	//methods
 	char * get_code()

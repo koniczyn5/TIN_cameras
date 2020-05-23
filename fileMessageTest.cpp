@@ -1,21 +1,19 @@
 #include "fileMessage.cpp"
-#include <iostream>
-#include <fstream>  
 
-#define BOOST_TEST_MODULE fileMessageTests
+#define BOOST_TEST_MODULE FileMessageTests
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 #include <boost/lambda/lambda.hpp>
 
-BOOST_AUTO_TEST_CASE(fileMessage_constructor1_test)
+BOOST_AUTO_TEST_CASE(FileMessage_constructor1_test)
 {
-	char id = 5;
+	char id = TEST_ACK;
 	char arr[10] = "test1.txt";
 	std::ofstream outfile("C:/test1.txt");
 	outfile << arr << std::endl;
 	outfile.close();
 
-	fileMessage *filemessage1 = new fileMessage( id, "C:/test1.txt", arr, sizeof(arr));
+	FileMessage *filemessage1 = new FileMessage( id, "C:/test1.txt", arr, sizeof(arr));
 
 	BOOST_CHECK_EQUAL(filemessage1->get_id(), id);
 	BOOST_CHECK_EQUAL(filemessage1->get_file_name(), arr);
@@ -23,9 +21,9 @@ BOOST_AUTO_TEST_CASE(fileMessage_constructor1_test)
 	delete filemessage1;
 }
 
-BOOST_AUTO_TEST_CASE(fileMessage_constructor2_test)
+BOOST_AUTO_TEST_CASE(FileMessage_constructor2_test)
 {
-	char id = 5;
+	char id = TEST_ACK;
 	char arr[10] = "test2.txt";
 	std::ofstream outfile("C:/test2.txt");
 	outfile << arr << std::endl;
@@ -35,7 +33,7 @@ BOOST_AUTO_TEST_CASE(fileMessage_constructor2_test)
 	file_buffer.open("C:/test2.txt", std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
 	if (file_buffer.is_open())
 	{
-		fileMessage *filemessage2 = new fileMessage(id, file_buffer, arr, sizeof(arr));
+		FileMessage *filemessage2 = new FileMessage(id, file_buffer, arr, sizeof(arr));
 		BOOST_CHECK_EQUAL(filemessage2->get_id(), id);
 		BOOST_CHECK_EQUAL(filemessage2->get_file_name(), arr);
 		BOOST_CHECK_EQUAL(filemessage2->get_file_name_size(), sizeof(arr));
@@ -47,7 +45,7 @@ BOOST_AUTO_TEST_CASE(fileMessage_constructor2_test)
 
 BOOST_AUTO_TEST_CASE(sendPackage_test)
 {
-	char id = 5;
+	char id = TEST_ACK;
 	char arr[10] = "test3.txt";
 	std::ofstream outfile("C:/test3.txt");
 	outfile << arr << std::endl;
@@ -60,7 +58,7 @@ BOOST_AUTO_TEST_CASE(sendPackage_test)
 	file_buffer.seekg(0, std::ios::beg);
 	if (file_buffer.is_open())
 	{
-		fileMessage *filemessage3 = new fileMessage(id, file_buffer, arr, sizeof(arr));
+		FileMessage *filemessage3 = new FileMessage(id, file_buffer, arr, sizeof(arr));
 
 		char * temp_arr = new char[size + 9];
 		char * tmp = new char[size];
@@ -77,6 +75,9 @@ BOOST_AUTO_TEST_CASE(sendPackage_test)
 		file_buffer.read(tmp, size);
 		memcpy(temp_arr + 9, tmp, size);
 		BOOST_CHECK_EQUAL(filemessage3->sendPackage(1), temp_arr);
+		BOOST_CHECK_EQUAL(filemessage3->get_buffer_size(), size);
+		BOOST_CHECK_EQUAL(filemessage3->get_package_amount(), (int)(size/512 + 1));
+		BOOST_CHECK_EQUAL(filemessage3->get_last_package_size(), (int)(size - (512 * (filemessage3->get_package_amount() - 1))));
 		delete temp_arr;
 		delete tmp;
 		delete filemessage3;
@@ -89,16 +90,16 @@ BOOST_AUTO_TEST_CASE(sendPackage_test)
 
 BOOST_AUTO_TEST_CASE(sendFileName_test)
 {
-	char id = 5;
+	char id = TEST_ACK;
 	char arr[10] = "test4.txt";
 	std::ofstream outfile("C:/test4.txt");
 	outfile << arr << std::endl;
 	outfile.close();
 
-	fileMessage *filemessage4 = new fileMessage(id, "C:/test4.txt", arr, sizeof(arr));
+	FileMessage *filemessage4 = new FileMessage(id, "C:/test4.txt", arr, sizeof(arr));
 
 	char *arr2 = new char[9 + sizeof(arr)];
-	arr2[0] = 12;
+	arr2[0] = DATA_HDR;
 	arr2[1] = (sizeof(arr) >> 24) & 0xFF;
 	arr2[2] = (sizeof(arr) >> 16) & 0xFF;
 	arr2[3] = (sizeof(arr) >> 8) & 0xFF;
@@ -109,4 +110,6 @@ BOOST_AUTO_TEST_CASE(sendFileName_test)
 	arr2[8] = 1 & 0xFF;
 	memcpy(arr2 + 9, arr, sizeof(arr));
 	BOOST_CHECK_EQUAL(filemessage4->sendFileInfo(), arr2);
+	delete arr2;
+	delete filemessage4;
 }

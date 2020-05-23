@@ -3,12 +3,29 @@
 #include <string.h>
 #include <fstream>
 #include <iostream>
-//To Do: exception handling and tests
 
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
 //packages are labeled from 1 to n
 
-class fileMessage {
+enum Message_type {
+	TEST_REQ,
+	TEST_ACK,
+	CONF_REQ,
+	CONF_ACK,
+	INST_REQ,
+	INST_HASH,
+	INST_ACK,
+	DISC_REQ,
+	DISC_ACK,
+	DATA_MSG,
+	DATA_RQT,
+	DATA_ACK,
+	DATA_HDR,
+	NO_PAIR,
+	IS_PAIR
+};
+
+class FileMessage {
 private:
 	
 	int package_size = 512;
@@ -21,7 +38,7 @@ private:
 
 public:
 	//constructor with filepath as argument
-	fileMessage(char id, const char * file_path, char * file_name, int file_name_size)
+	FileMessage(char id, const char * file_path, char * file_name, int file_name_size)
 	{
 		set_id(id);
 		set_file_name_size(file_name_size);
@@ -53,7 +70,7 @@ public:
 		file_buffer.close();
 	}
 	//constructor with buffer stream as argument
-	fileMessage(char id, std::fstream& file_buffer, char * file_name, int file_name_size)
+	FileMessage(char id, std::fstream& file_buffer, char * file_name, int file_name_size)
 	{
 		set_id(id);
 		set_file_name_size(file_name_size);
@@ -82,7 +99,7 @@ public:
 		file_buffer.close();
 	}
 	//Destructor
-	~fileMessage()
+	~FileMessage()
 	{
 		delete buffer_code;
 		if (!file_name)
@@ -176,7 +193,7 @@ public:
 			x = 0;
 			return nullptr;
 		}
-
+		//package attributes
 		char * arr = new char[x + 9];
 		arr[0] = id;
 		arr[1] = (packageId >> 24) & 0xFF;
@@ -187,14 +204,16 @@ public:
 		arr[6] = (package_amount >> 16) & 0xFF;
 		arr[7] = (package_amount >> 8) & 0xFF;
 		arr[8] = package_amount & 0xFF;
+		//package data
 		memcpy(arr + 9, buffer_code + ((packageId-1) * package_size), x);
 		return arr;
 	}
 	//send information about loaded file (name size/package amount/name)
 	char * sendFileInfo()
 	{
+		//file name attributes
 		char *arr = new char[9 + file_name_size];
-		arr[0] = 12;
+		arr[0] = DATA_HDR;
 		arr[1] = (file_name_size >> 24) & 0xFF;
 		arr[2] = (file_name_size >> 16) & 0xFF;
 		arr[3] = (file_name_size >> 8) & 0xFF;
@@ -203,6 +222,7 @@ public:
 		arr[6] = (package_amount >> 16) & 0xFF;
 		arr[7] = (package_amount >> 8) & 0xFF;
 		arr[8] = package_amount & 0xFF;
+		//file name data
 		memcpy(arr + 9, file_name , file_name_size);
 		return arr;
 	}
