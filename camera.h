@@ -1,12 +1,17 @@
+//-- Camera
+//-- Autor: Maciej Puchalski
 #include <stdio.h>
 #include <stdlib.h>    // exit()
 #include <string.h>    // memset()
 #include <arpa/inet.h> // inet_pton()
 #include <sys/socket.h>
 #include "message.cpp"
+//#include "fileMessage.cpp"
 #include <fstream>
 #include <iostream>
+#include <poll.h>
 #define BUFFER_LEN 4096
+using namespace std;
 class Camera
 {
 private:

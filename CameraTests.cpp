@@ -1,3 +1,5 @@
+//-- Camera
+//-- Autor: Maciej Puchalski
 #include <boost/lambda/lambda.hpp>
 #include <iostream>
 #include "camera.h"
