@@ -1,4 +1,5 @@
 #include "fileMessage.cpp"
+#include <filesystem>
 
 #define BOOST_TEST_MODULE FileMessageTests
 #include <boost/test/included/unit_test.hpp>
@@ -9,11 +10,12 @@ BOOST_AUTO_TEST_CASE(FileMessage_constructor1_test)
 {
 	char id = TEST_ACK;
 	char arr[10] = "test1.txt";
-	std::ofstream outfile("C:/test1.txt");
+
+	std::ofstream outfile("test1.txt");
 	outfile << arr << std::endl;
 	outfile.close();
 
-	FileMessage *filemessage1 = new FileMessage( id, "C:/test1.txt", arr, sizeof(arr));
+	FileMessage *filemessage1 = new FileMessage( id, "test1.txt", arr, sizeof(arr));
 
 	BOOST_CHECK_EQUAL(filemessage1->get_id(), id);
 	BOOST_CHECK_EQUAL(filemessage1->get_file_name(), arr);
@@ -25,12 +27,12 @@ BOOST_AUTO_TEST_CASE(FileMessage_constructor2_test)
 {
 	char id = TEST_ACK;
 	char arr[10] = "test2.txt";
-	std::ofstream outfile("C:/test2.txt");
+	std::ofstream outfile("test2.txt");
 	outfile << arr << std::endl;
 	outfile.close();
 
 	std::fstream file_buffer;
-	file_buffer.open("C:/test2.txt", std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
+	file_buffer.open("test2.txt", std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
 	if (file_buffer.is_open())
 	{
 		FileMessage *filemessage2 = new FileMessage(id, file_buffer, arr, sizeof(arr));
@@ -47,12 +49,12 @@ BOOST_AUTO_TEST_CASE(sendPackage_test)
 {
 	char id = TEST_ACK;
 	char arr[10] = "test3.txt";
-	std::ofstream outfile("C:/test3.txt");
+	std::ofstream outfile("test3.txt");
 	outfile << arr << std::endl;
 	outfile.close();
 
 	std::fstream file_buffer;
-	file_buffer.open("C:/test3.txt", std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
+	file_buffer.open("test3.txt", std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
 	file_buffer.seekg(0, file_buffer.end);
 	int size = file_buffer.tellg();
 	file_buffer.seekg(0, std::ios::beg);
@@ -92,11 +94,11 @@ BOOST_AUTO_TEST_CASE(sendFileName_test)
 {
 	char id = TEST_ACK;
 	char arr[10] = "test4.txt";
-	std::ofstream outfile("C:/test4.txt");
+	std::ofstream outfile("test4.txt");
 	outfile << arr << std::endl;
 	outfile.close();
 
-	FileMessage *filemessage4 = new FileMessage(id, "C:/test4.txt", arr, sizeof(arr));
+	FileMessage *filemessage4 = new FileMessage(id, "test4.txt", arr, sizeof(arr));
 
 	char *arr2 = new char[9 + sizeof(arr)];
 	arr2[0] = DATA_HDR;
