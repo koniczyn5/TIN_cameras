@@ -3,11 +3,20 @@
 #include <string.h>
 
 enum Message_type {
-	EMPTY_MSG,
 	TEST_REQ,
 	TEST_ACK,
 	CONF_REQ,
-	CONF_ACK
+	CONF_ACK,
+	INST_REQ,
+	INST_ACK,
+	DISC_REQ,
+	DISC_ACK,
+	DATA_MSG,
+	DATA_RQT,
+	DATA_ACK,
+	DATA_HDR,
+	NO_PAIR,
+	IS_PAIR
 };
 
 class Message {
