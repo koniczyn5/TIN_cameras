@@ -1,24 +1,9 @@
 // Message
-// Autor: Lukasz Rombel
+// Projekt:	Camera-Link
+// Autor: �ukasz Rombel
+// Data utworzenia: 02.05.2020
 #include <string.h>
 
-enum Message_type {
-	TEST_REQ,
-	TEST_ACK,
-	CONF_REQ,
-	CONF_ACK,
-	INST_REQ,
-	INST_HASH,
-	INST_ACK,
-	DISC_REQ,
-	DISC_ACK,
-	DATA_MSG,
-	DATA_RQT,
-	DATA_ACK,
-	DATA_HDR,
-	NO_PAIR,
-	IS_PAIR
-};
 
 class Message {
 private:
@@ -71,8 +56,7 @@ public:
 
 	void set_msg(char new_msg[])
 	{
-		int x = get_msg_size();
-		memcpy(msg, new_msg, msg_size);
+		memcpy(msg, new_msg, get_msg_size());
 	}
 	//methods
 	char * get_code()
@@ -84,33 +68,5 @@ public:
 	}
 };
 
-class Test_ack_message : public Message {
-private:
-	char id;
-	char num;
-public:
-	Test_ack_message(char num) : Message(TEST_ACK)
-	{
-		set_num(num);
-	}
-
-	void set_num(char new_num)
-	{
-		num = new_num;
-	}
-
-	char get_num()
-	{
-		return num;
-	}
-
-	char * get_code()
-	{
-		char *arr = new char[2];
-		arr[0] = get_id();
-		arr[1] = get_num();
-		return arr;
-	}
-};
 
 

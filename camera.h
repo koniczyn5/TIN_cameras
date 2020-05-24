@@ -6,11 +6,11 @@
 #include <arpa/inet.h> // inet_pton()
 #include <sys/socket.h>
 #include "message.cpp"
-//#include "fileMessage.cpp"
+#include "fileMessage.cpp"
 #include <fstream>
 #include <iostream>
 #include <poll.h>
-#define BUFFER_LEN 4096
+#define BUFFER_LEN 512
 using namespace std;
 class Camera
 {
