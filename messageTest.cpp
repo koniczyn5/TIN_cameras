@@ -1,5 +1,7 @@
-// Message
-// Autor: Lukasz Rombel
+// MessageTests
+// Projekt:	Camera-Link
+// Autor: £ukasz Rombel
+// Data utworzenia: 23.05.2020
 #include "message.cpp"
 
 #define BOOST_TEST_MODULE MessageTests

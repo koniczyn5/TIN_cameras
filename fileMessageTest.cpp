@@ -1,5 +1,7 @@
 // Message
-// Autor: Lukasz Rombel
+// Projekt:	Camera-Link
+// Autor: £ukasz Rombel
+// Data utworzenia: 23.05.2020
 #include "fileMessage.cpp"
 #include <filesystem>
 
@@ -14,11 +16,10 @@ BOOST_AUTO_TEST_CASE(FileMessage_constructor1_test)
 	char arr[10] = "test1.txt";
 
 	std::ofstream outfile("test1.txt");
-	outfile << arr << std::endl;
+	outfile << "test1.txt" << std::endl;
 	outfile.close();
 
 	FileMessage *filemessage1 = new FileMessage( id, "test1.txt", arr, sizeof(arr));
-
 	BOOST_CHECK_EQUAL(filemessage1->get_id(), id);
 	BOOST_CHECK_EQUAL(filemessage1->get_file_name(), arr);
 	BOOST_CHECK_EQUAL(filemessage1->get_file_name_size(), sizeof(arr));
@@ -30,7 +31,7 @@ BOOST_AUTO_TEST_CASE(FileMessage_constructor2_test)
 	char id = TEST_ACK;
 	char arr[10] = "test2.txt";
 	std::ofstream outfile("test2.txt");
-	outfile << arr << std::endl;
+	outfile << "test2.txt" << std::endl;
 	outfile.close();
 
 	std::fstream file_buffer;
@@ -52,7 +53,7 @@ BOOST_AUTO_TEST_CASE(sendPackage_test)
 	char id = TEST_ACK;
 	char arr[10] = "test3.txt";
 	std::ofstream outfile("test3.txt");
-	outfile << arr << std::endl;
+	outfile << "test3.txt" << std::endl;
 	outfile.close();
 
 	std::fstream file_buffer;
@@ -97,7 +98,7 @@ BOOST_AUTO_TEST_CASE(sendFileName_test)
 	char id = TEST_ACK;
 	char arr[10] = "test4.txt";
 	std::ofstream outfile("test4.txt");
-	outfile << arr << std::endl;
+	outfile << "test4.txt" << std::endl;
 	outfile.close();
 
 	FileMessage *filemessage4 = new FileMessage(id, "test4.txt", arr, sizeof(arr));

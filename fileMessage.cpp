@@ -1,5 +1,7 @@
 // Message
-// Autor: Lukasz Rombel
+// Projekt:	Camera-Link
+// Autor: £ukasz Rombel
+// Data utworzenia: 18.05.2020
 #include <string.h>
 #include <fstream>
 #include <iostream>

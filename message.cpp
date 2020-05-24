@@ -1,5 +1,7 @@
 // Message
-// Autor: Lukasz Rombel
+// Projekt:	Camera-Link
+// Autor: £ukasz Rombel
+// Data utworzenia: 02.05.2020
 #include <string.h>
 
 enum Message_type {
@@ -83,33 +85,5 @@ public:
 	}
 };
 
-class Test_ack_message : public Message {
-private:
-	char id;
-	char num;
-public:
-	Test_ack_message(char num) : Message(TEST_ACK)
-	{
-		set_num(num);
-	}
-
-	void set_num(char new_num)
-	{
-		num = new_num;
-	}
-
-	char get_num()
-	{
-		return num;
-	}
-
-	char * get_code()
-	{
-		char *arr = new char[2];
-		arr[0] = get_id();
-		arr[1] = get_num();
-		return arr;
-	}
-};
 
 
