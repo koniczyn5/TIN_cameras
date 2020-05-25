@@ -13,7 +13,7 @@
 #define NUM_THREADS 5
 #define SEND_PHOTO_INTERVAL 120
 #define ADDRESS_SIZE 46
- Camera camera;
+Camera camera;
 int gatePort4;
 int gatePort6;
 int gatePhotoPort;
@@ -104,7 +104,7 @@ void *photoSender(void *data)
                     memset(buffer, 0, sizeof(buffer));
                     break;
                 }
-                else
+                else if (buffer[0] == DATA_RQT)
                 {
                     int packageNr = buffer[1];
                     int bufferSize;
@@ -181,7 +181,7 @@ void *photoSender(void *data)
                             memset(buffer, 0, sizeof(buffer));
                             break;
                         }
-                        else
+                        else if (buffer[0] == DATA_RQT)
                         {
                             int packageNr = buffer[1];
                             int bufferSize;
@@ -244,7 +244,7 @@ const int getSocket(bool ipv6)
 
 void *listener(void *data)
 {
-   
+
     //sockaddr_in *gate = (sockaddr_in *)data;
     bool *ipv6 = (bool *)data;
 
@@ -368,7 +368,7 @@ void *listener(void *data)
             }
             else
             {
-                if (strcmp(camera.getPassword(), buffer + 1))
+                if (strcmp(camera.getPassword(), buffer + 1) == 0)
                 {
                     memset(buffer, 0, sizeof(buffer));
                     strcpy(gateAdress, from);
@@ -393,13 +393,15 @@ void *listener(void *data)
                         isIpv4connected = true;
                         inet_pton(AF_INET, gateAdress, &gate4.sin_addr);
                         inet_pton(AF_INET, gateAdress, &gatePhoto4.sin_addr);
-
+                        
                         if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate4), len4) < 0)
                         {
                             perror("sendto() ERROR");
                             exit(5);
                         }
+                        
                     }
+                    pthread_create(&threads[2], NULL, photoSender, &*ipv6);
                     saveLog("succesful pairing (inst ack)", *ipv6, gateAdress);
                     cout << "udane parowanie\n";
                     file.write(gateAdress, sizeof(gateAdress));
@@ -576,7 +578,8 @@ int main(int argc, char *argv[])
     bool ipv4 = false;
     bool ipv6 = true;
     camera.loadCameraConfig("camera.config");
-    if(!camera.loadPassword("password"))return 0;
+    if (!camera.loadPassword("password"))
+        return 0;
     pthread_create(&threads[0], NULL, listener, &ipv4);
     pthread_create(&threads[1], NULL, listener, &ipv6);
     while (1)
