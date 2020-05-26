@@ -10,6 +10,8 @@
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
 //packages are labeled from 1 to n
 
+const int package_size = 500;
+
 FileMessage::FileMessage(char id, const char * file_path, char * file_name, int file_name_size)
 {
 	set_id(id);
@@ -102,11 +104,6 @@ void FileMessage::set_package_size(int new_package_size)
 	package_size = new_package_size;
 }
 
-int FileMessage::get_package_size()
-{
-	return package_size;
-}
-
 void FileMessage::set_file_name_size(int new_file_name_size)
 {
 	file_name_size = new_file_name_size;
@@ -187,7 +184,7 @@ char * FileMessage::sendPackage(int packageId)
 char * FileMessage::sendFileInfo()
 {
 	//file name attributes
-	char *arr = new char[9 + file_name_size];
+	char *arr = new char[13 + file_name_size];
 	arr[0] = DATA_HDR;
 	*(int*)&arr[1] = file_name_size;
 	*(int*)&arr[5] = package_amount;
