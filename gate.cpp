@@ -180,8 +180,8 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     }
     saveLog("Receiving data transfer from camera", ai_addr, port);
     int packetNum;
-    int nOfPackets;
-    nOfPackets = buffer[5]<<24 | buffer[6]<<16 | buffer[7]<<8 | buffer[8];
+    int nOfPackets = *(int*)&buffer[5];
+    //nOfPackets = buffer[5]<<24 | buffer[6]<<16 | buffer[7]<<8 | buffer[8];
     bool received[nOfPackets+1];
     for(int i = 0; i < nOfPackets+1; ++i)
         received[i] = false;
@@ -197,7 +197,8 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     }
     else
     {
-        packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
+        //packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
+        packetNum = *(int*)&buffer[1];
         received[packetNum] = true;
         ++receivedCount;
     }
@@ -221,7 +222,8 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
         }
         else
         {
-            packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
+            //packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
+            packetNum = *(int*)&buffer[1];
             received[packetNum] = true;
             ++receivedCount;
             memcpy(dataBuffer + (packetNum-1)*PACKETSIZE, buffer + 9, PACKETSIZE);
@@ -237,8 +239,9 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
             {
                 memset(buffer, 0, BUFFER_LEN);
                 buffer[0] = DATA_RQT;
-                int *rqtNum = (int*)&buffer[1];
-                *rqtNum = currentPacket;
+                //int *rqtNum = (int*)&buffer[1];
+                //*rqtNum = currentPacket;
+                *(int*)&buffer[1] = currentPacket;
                 if(sendto(socketFd, buffer, BUFFER_LEN, 0, ai_addr, ai_addrlen) < 0)
                     error("Sendto()");
                 memset(buffer, 0, BUFFER_LEN);
@@ -258,7 +261,8 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
                 }
                 else
                 {
-                    packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
+                    //packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
+                    packetNum = *(int*)&buffer[1];
                     if(packetNum <= 0)
                         continue;
                     received[packetNum] = true;
@@ -336,7 +340,7 @@ void configureCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int 
 
     saveLog("Sending configuration data to camera", ai_addr, port);
 
-    if(sendto(socketFd, buffer, 18, 0, ai_addr, ai_addrlen) < 0)
+    if(sendto(socketFd, buffer, 22, 0, ai_addr, ai_addrlen) < 0)
         error("Sendto()");
 
     saveLog("Waiting for confirmation", ai_addr, port);
