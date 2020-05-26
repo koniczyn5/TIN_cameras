@@ -259,6 +259,8 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
                 else
                 {
                     packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
+                    if(packetNum <= 0)
+                        continue;
                     received[packetNum] = true;
                     ++receivedCount;
                     memcpy(dataBuffer + (packetNum-1)*PACKETSIZE, buffer + 9, PACKETSIZE);
@@ -441,11 +443,11 @@ int main (int argc, char *argv[])
     {
         if(!installCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2])))
             exit(1);
-	}
+    }
 
-    testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
+    //testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
 
-    configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
+    //configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
 
     photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
 
