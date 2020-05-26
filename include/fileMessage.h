@@ -17,10 +17,10 @@ private:
 	int package_size = 512;
 	int package_amount = 0;
 	int last_package_size = 0;
-	char id;
+	int file_name_size = 0;
+	char id = 0;
 	char * buffer_code;
 	char * file_name;
-	int file_name_size;
 
 public:
 	//constructor with filepath as argument
