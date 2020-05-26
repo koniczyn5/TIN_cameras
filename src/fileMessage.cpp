@@ -10,7 +10,7 @@
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
 //packages are labeled from 1 to n
 
-const int package_size = 0;
+const int package_size = 500;
 
 FileMessage::FileMessage(char id, const char * file_path, char * file_name, int file_name_size)
 {
