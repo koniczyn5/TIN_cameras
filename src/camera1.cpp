@@ -16,9 +16,9 @@
 #define ADDRESS_SIZE 46
 #define TIMEOUT 20
 Camera camera;
-int gatePort4=6666;
-int gatePort6=6667;
-int gatePhotoPort=6668;
+int gatePort4=4011;
+int gatePort6=4012;
+int gatePhotoPort=4013;
 bool isIpv6connected = false;
 bool isIpv4connected = false;
 pthread_cond_t ipv4_cond;

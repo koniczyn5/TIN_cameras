@@ -9,7 +9,7 @@
 #define BUFFER_LEN 4096
 #define PASSWORD "okon"
 #define IPSTRLEN 40
-#define RECVPORT 6668
+#define RECVPORT 4013
 #define PACKETSIZE 512
 #define TIMEOUT 1
 #define FAILNUM 3

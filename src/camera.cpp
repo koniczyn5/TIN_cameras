@@ -85,7 +85,7 @@ void *photoSender(void *data)
             char *temp = fileMessage.sendFileInfo();
             memcpy(buffer, temp,fileMessage.get_file_name_size()+13);
             delete[] temp;
-            if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
+            if (sendto(socket_, buffer, fileMessage.get_file_name_size()+13, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
             {
                 perror("sendto() ERROR");
                 exit(5);
@@ -190,7 +190,7 @@ void *photoSender(void *data)
                     delete[] temp;
                     pthread_mutex_lock(&mutexIpv4);
                     saveLog("sending photo file info", *ipv6, gateAdress,true);
-                    if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
+                    if (sendto(socket_, buffer, fileMessage.get_file_name_size()+13, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
