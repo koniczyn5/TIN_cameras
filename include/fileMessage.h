@@ -11,6 +11,8 @@
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
 //packages are labeled from 1 to n
 
+const static int package_size = 500;
+
 class FileMessage {
 private:
 	
@@ -22,7 +24,6 @@ private:
 	char * file_name;
 
 public:
-	const static int package_size = 500;
 	//constructor with filepath as argument
 	FileMessage(char id, const char * file_path, char * file_name, int file_name_size);
 	//constructor with buffer stream as argument
