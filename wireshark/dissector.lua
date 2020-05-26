@@ -38,7 +38,7 @@ function cameralink_proto.dissector(buffer,pinfo,tree)
     elseif msg_type == 5 then
 	subtree:add(buffer(0,1),"INST_REQ")
         pinfo.cols.info:append("INST_REQ")
-	subtree:add(buffer(0,1),"Password: " .. buffer(1,4))
+	subtree:add(buffer(0,1),"Password: " .. buffer:raw(1,4))
     elseif msg_type == 6 then
 	subtree:add(buffer(0,1),"INST_ACK")
         pinfo.cols.info:append("INST_ACK")
@@ -51,13 +51,13 @@ function cameralink_proto.dissector(buffer,pinfo,tree)
     elseif msg_type == 9 then
 	subtree:add(buffer(0,1),"DATA_MSG")
         pinfo.cols.info:append("DATA_MSG")
-	local packet = buffer(1,4):uint()
-	local maxPackets = buffer(5,4):uint()
+	local packet = buffer(1,4):le_uint()
+	local maxPackets = buffer(5,4):le_uint()
 	subtree:add(buffer(0,1),"Packet: " .. packet .."/" .. maxPackets)
     elseif msg_type == 10 then
 	subtree:add(buffer(0,1),"DATA_RQT")
         pinfo.cols.info:append("DATA_RQT")
-	local requestedPacket = buffer(1,4):uint()
+	local requestedPacket = buffer(1,4):le_uint()
 	subtree:add(buffer(0,1),"Requested packet: " .. requestedPacket)
     elseif msg_type == 11 then
 	subtree:add(buffer(0,1),"DATA_ACK")
@@ -65,8 +65,8 @@ function cameralink_proto.dissector(buffer,pinfo,tree)
     elseif msg_type == 12 then
 	subtree:add(buffer(0,1),"DATA_HDR")
         pinfo.cols.info:append("DATA_HDR")
-	local filenameSize = buffer(1,4):uint()
-	local maxPackets = buffer(5,4):uint()
+	local filenameSize = buffer(1,4):le_uint()
+	local maxPackets = buffer(5,4):le_uint()
 	subtree:add(buffer(0,1),"Number of packets: " .. maxPackets ..". Filename: " .. buffer:raw(9,filenameSize))
     elseif msg_type == 13 then
 	subtree:add(buffer(0,1),"NO_PAIR")
