@@ -26,7 +26,7 @@ void error(const char *msg);
 void getValue(int *dest);
 void getValue(float *dest);
 bool installCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int port);
-void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen);
+void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int port, float interval);
 void configureCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int port);
 void testConnection(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int port);
 

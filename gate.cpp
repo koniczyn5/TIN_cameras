@@ -12,6 +12,7 @@
 #define PACKETSIZE 512
 #define TIMEOUT 1
 #define FAILNUM 3
+#define PHOTOINTERVAL 5.0
 
 std::string ipToString(const struct sockaddr *ipAddress)
 {
@@ -89,7 +90,14 @@ bool installCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
 
     memset(buffer, 0, BUFFER_LEN);
     if(recvfrom(socketFd, buffer, BUFFER_LEN, 0, ai_addr, &ai_addrlen) < 0)
+    {
+        if(errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            saveLog("Camera not responding", ai_addr, port);
+            return false;
+        }
         error("Recvfrom()");
+    }
 
     if(buffer[0] == INST_ACK)
     {
@@ -123,7 +131,14 @@ bool disconnectCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int
         error("Sendto()");
     memset(buffer, 0, BUFFER_LEN);
     if(recvfrom(socketFd, buffer, BUFFER_LEN, 0, ai_addr, &ai_addrlen) < 0)
+    {
+        if(errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            saveLog("Camera not responding", ai_addr, port);
+            return false;
+        }
         error("Recvfrom()");
+    }
 
     if(buffer[0] == DISC_ACK)
     {
@@ -139,18 +154,23 @@ bool disconnectCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int
     return false;
 
 }
-void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen)
+void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int port, float interval)
 {
     char buffer[BUFFER_LEN];
     memset(buffer, 0, BUFFER_LEN);
-    saveLog("Waiting for photo from camera", ai_addr, RECVPORT);
+    saveLog("Waiting for photo from camera", ai_addr, port);
 
-    while(true)
+    for (float f = 0.0;; f += (float)TIMEOUT)
     {
         memset(buffer, 0, BUFFER_LEN);
         if(recvfrom(socketFd, buffer, BUFFER_LEN, 0, ai_addr, &ai_addrlen) < 0)
         {
-            if(errno == EAGAIN || errno == EWOULDBLOCK)
+            if(f >= interval)
+            {
+                saveLog("Camera not responding", ai_addr, port);
+                return;
+            }
+            else if(errno == EAGAIN || errno == EWOULDBLOCK)
                 continue;
             else
                 error("Recvfrom()");
@@ -158,7 +178,7 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen)
         if(buffer[0] == DATA_HDR || buffer[0] == DATA_MSG)
             break;
     }
-    saveLog("Receiving data transfer from camera", ai_addr, RECVPORT);
+    saveLog("Receiving data transfer from camera", ai_addr, port);
     int packetNum;
     int nOfPackets;
     nOfPackets = buffer[5]<<24 | buffer[6]<<16 | buffer[7]<<8 | buffer[8];
@@ -209,7 +229,7 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen)
     }
     if(receivedCount < nOfPackets+1)
     {
-        saveLog("Data incomplete, requesting resend", ai_addr, RECVPORT);
+        saveLog("Data incomplete, requesting resend", ai_addr, port);
         for(int fails=0; fails<FAILNUM; ++fails)
         for(int currentPacket = 0; currentPacket < nOfPackets+1; ++currentPacket)
         {
@@ -249,11 +269,11 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen)
     }
     if(receivedCount < nOfPackets+1)
     {
-        saveLog("Failed to get complete data from camera", ai_addr, RECVPORT);
+        saveLog("Failed to get complete data from camera", ai_addr, port);
         return;
     }
 
-    saveLog("Photo received, sending DATA_ACK", ai_addr, RECVPORT);
+    saveLog("Photo received, sending DATA_ACK", ai_addr, port);
     memset(buffer, 0, BUFFER_LEN);
     buffer[0] = DATA_ACK;
     if(sendto(socketFd, buffer, BUFFER_LEN, 0, ai_addr, ai_addrlen) < 0)
@@ -273,10 +293,10 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen)
     photoFile.open(fileName, std::fstream::in | std::fstream::out | std::fstream::trunc);
     if(!photoFile.is_open())
     {
-        saveLog("Failed to open photo file", ai_addr, RECVPORT);
+        saveLog("Failed to open photo file", ai_addr, port);
         return;
     }
-    saveLog("Photo saved", ai_addr, RECVPORT);
+    saveLog("Photo saved", ai_addr, port);
     photoFile << dataBuffer;
     photoFile.close();
     shutdown(socketFd, SHUT_RDWR);
@@ -320,7 +340,15 @@ void configureCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int 
     saveLog("Waiting for confirmation", ai_addr, port);
 
     if(recvfrom(socketFd, buffer, BUFFER_LEN, 0, ai_addr, &ai_addrlen) < 0)
+    {
+        if(errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            saveLog("Camera not responding", ai_addr, port);
+            return;
+        }
+
         error("Recvfrom()");
+    }
 
     if(buffer[0] == CONF_ACK)
         saveLog("Configuration succeeded", ai_addr, port);
@@ -344,7 +372,15 @@ void testConnection(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int p
     saveLog("Awaiting response to connection test", ai_addr, port);
 
     if(recvfrom(socketFd, buffer, 1, 0, ai_addr, &ai_addrlen) < 0)
+    {
+        if(errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            saveLog("Camera not responding", ai_addr, port);
+            return;
+        }
+
         error("Recvfrom()");
+    }
 
     if(buffer[0] == TEST_ACK)
         saveLog("Connection test succeeded", ai_addr, port);
@@ -357,6 +393,7 @@ int main (int argc, char *argv[])
     int connectSocketFd, recvSocketFd;
     addrinfo hints;
     addrinfo *cameraInfo;
+    stop = false;
 
 	if(argc < 3)
 	{
@@ -364,21 +401,25 @@ int main (int argc, char *argv[])
 		exit(1);
     }
 
+    struct timeval timeout;
+    timeout.tv_sec = TIMEOUT;
+    timeout.tv_usec = 0;
+
     connectSocketFd = socket(AF_INET, SOCK_DGRAM, 0);
     if(connectSocketFd < 0)
         error("Open connect socket");
+    if(setsockopt(connectSocketFd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
+        error("Setsockopt()");
 
     recvSocketFd = socket(AF_INET, SOCK_DGRAM, 0);
     if(recvSocketFd < 0)
         error("Open receive socket");
+
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(RECVPORT);
     addr.sin_addr.s_addr = INADDR_ANY;
-    struct timeval timeout;
-    timeout.tv_sec = TIMEOUT;
-    timeout.tv_usec = 0;
     if(setsockopt(recvSocketFd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
         error("Setsockopt()");
     if(bind(recvSocketFd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) < 0)
@@ -405,13 +446,14 @@ int main (int argc, char *argv[])
 
     testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
 
-    //configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
+    configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
 
-    photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen);
+    photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
 
     disconnectCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
     freeaddrinfo(cameraInfo);
     shutdown(connectSocketFd, SHUT_RDWR);
+    shutdown(recvSocketFd, SHUT_RDWR);
 
 	return 0;
 }
