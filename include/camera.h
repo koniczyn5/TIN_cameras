@@ -7,8 +7,8 @@
 #include <string.h>    // memset()
 #include <arpa/inet.h> // inet_pton()
 #include <sys/socket.h>
-#include "message.cpp"
-#include "fileMessage.cpp"
+#include "message.h"
+#include "fileMessage.h"
 #include <fstream>
 #include <iostream>
 #include <poll.h>

@@ -11,19 +11,23 @@ SRC_DIR := src
 OBJ_DIR := obj
 TEST_DIR := tests
 
-EXE := camera gate
+EXE := camera/camera gate/gate
 TESTS := $(TEST_DIR)/messageTest $(TEST_DIR)/fileMessageTest $(TEST_DIR)/CameraTest
 SRC := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-all: $(EXE)
+all: MKEXEDIRS $(EXE)
+
+MKEXEDIRS:
+		mkdir -p camera
+		mkdir -p gate
 
 test: $(TESTS) $(TEST_DIR)/cameraTesting1 #$(TEST_DIR)/gateTesting1 $(TEST_DIR)/multipleCameraTesting
 
-camera: $(OBJ_DIR)/message.o $(OBJ_DIR)/fileMessage.o $(OBJ_DIR)/camera.o
+camera/camera: $(OBJ_DIR)/message.o $(OBJ_DIR)/fileMessage.o $(OBJ_DIR)/camera.o
 		$(CC) $(LDFLAGS) $^ -o $@
 
-gate: $(OBJ_DIR)/message.o $(OBJ_DIR)/fileMessage.o $(OBJ_DIR)/gate.o
+gate/gate: $(OBJ_DIR)/message.o $(OBJ_DIR)/fileMessage.o $(OBJ_DIR)/gate.o
 		$(CC) $(LDFLAGS) $^ -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
@@ -65,6 +69,10 @@ $(TEST_DIR)/multipleCameraTesting: MKDIRS $(OBJ_DIR)/camera3.o $(OBJ_DIR)/gate3.
 $(TEST_DIR):
 		mkdir -p $@
 
+cleanLogs:
+		rm -f camera/*.log
+		rm -f gate/*.log
+
 cleanTestTexts:
 		rm -f $(TEST_DIR)/*.txt
 		rm -f $(TEST_DIR)/gateTesting1/camera/*.txt
@@ -85,4 +93,5 @@ cleanTest: cleanTestTexts
 
 clean: cleanTest
 		rm -f $(EXE)
+		rm -f camera/*.config
 		rm -f $(OBJ_DIR)/*.o

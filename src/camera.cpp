@@ -11,7 +11,7 @@
 #include <chrono>
 #include <unistd.h>
 #define NUM_THREADS 5
-#define SEND_PHOTO_INTERVAL 120
+#define SEND_PHOTO_INTERVAL 10
 #define ADDRESS_SIZE 46
 Camera camera;
 int gatePort4;
@@ -93,11 +93,11 @@ void *photoSender(void *data)
             }
             memset(buffer, 0, sizeof(buffer));
             int size = fileMessage.get_package_amount();
-            for (int i = 0; i < size; ++i)
+            for (int i = 0; i <= size; ++i)
             {
                 
                 int bufferSize;
-                if (i == size - 1)
+                if (i == size)
                     bufferSize = fileMessage.get_last_package_size();
                 else
                     bufferSize = fileMessage.get_package_size();
@@ -126,7 +126,7 @@ void *photoSender(void *data)
                 {
                     int packageNr = buffer[1];
                     int bufferSize;
-                    if (packageNr == size - 1)
+                    if (packageNr == size)
                         bufferSize = fileMessage.get_last_package_size();
                     else
                         bufferSize = fileMessage.get_package_size();
@@ -174,11 +174,11 @@ void *photoSender(void *data)
                     memset(buffer, 0, sizeof(buffer));
                     int size = fileMessage.get_package_amount();
 
-                    for (int i = 0; i < size - 1; ++i)
+                    for (int i = 0; i <= size; ++i)
                     {
                         
                         int bufferSize;
-                        if (i == size - 1)
+                        if (i == size)
                             bufferSize = fileMessage.get_last_package_size();
                         else
                             bufferSize = fileMessage.get_package_size();
@@ -215,7 +215,7 @@ void *photoSender(void *data)
                             saveLog( "DATA_RQT recived", *ipv6, gateAdress,true);    
                             int packageNr = buffer[1];
                             int bufferSize;
-                            if (packageNr == size - 1)
+                            if (packageNr == size)
                                 bufferSize = fileMessage.get_last_package_size();
                             else
                                 bufferSize = fileMessage.get_package_size();

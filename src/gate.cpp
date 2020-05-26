@@ -6,7 +6,7 @@
 #include "gate.h"
 
 #define BUFFER_LEN 4096
-#define PASSWORD "okon\0"
+#define PASSWORD "okon"
 #define IPSTRLEN 40
 #define RECVPORT 6668
 #define PACKETSIZE 512
@@ -83,7 +83,7 @@ bool installCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     buffer[0] = INST_REQ;
     strcpy((char*)&buffer[1], msgText.c_str());
 
-    if(sendto(socketFd, buffer, 6, 0, ai_addr, ai_addrlen) < 0)
+    if(sendto(socketFd, buffer, 5, 0, ai_addr, ai_addrlen) < 0)
         error("Sendto()");
 
     saveLog("Camera installation request sent", ai_addr, port);
@@ -336,7 +336,7 @@ void configureCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int 
 
     saveLog("Sending configuration data to camera", ai_addr, port);
 
-    if(sendto(socketFd, buffer, 18, 0, ai_addr, ai_addrlen) < 0)
+    if(sendto(socketFd, buffer, 21, 0, ai_addr, ai_addrlen) < 0)
         error("Sendto()");
 
     saveLog("Waiting for confirmation", ai_addr, port);
@@ -444,14 +444,24 @@ int main (int argc, char *argv[])
         if(!installCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2])))
             exit(1);
     }
+    if(argc > 3 && strncmp(argv[3], "-d", 3) == 0)
+    {
+        if(!disconnectCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2])))
+            exit(1);
+    }
+
+    if(argc > 3 && strncmp(argv[3], "-c", 3) == 0)
+    {
+        configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
+    }
 
     testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
 
-    configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
+    while(true)
+    {
+        photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
+    }
 
-    photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
-
-    disconnectCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
     freeaddrinfo(cameraInfo);
     shutdown(connectSocketFd, SHUT_RDWR);
     shutdown(recvSocketFd, SHUT_RDWR);

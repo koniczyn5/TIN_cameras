@@ -7,7 +7,7 @@
 #include "gate.h"
 
 #define BUFFER_LEN 4096
-#define PASSWORD "okon\0"
+#define PASSWORD "okon"
 #define IPSTRLEN 40
 #define RECVPORT 6668
 #define PACKETSIZE 512
@@ -84,7 +84,7 @@ bool installCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     buffer[0] = INST_REQ;
     strcpy((char*)&buffer[1], msgText.c_str());
 
-    if(sendto(socketFd, buffer, 6, 0, ai_addr, ai_addrlen) < 0)
+    if(sendto(socketFd, buffer, 5, 0, ai_addr, ai_addrlen) < 0)
         error("Sendto()");
 
     saveLog("Camera installation request sent", ai_addr, port);
@@ -337,7 +337,7 @@ void configureCamera(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int 
 
     saveLog("Sending configuration data to camera", ai_addr, port);
 
-    if(sendto(socketFd, buffer, 18, 0, ai_addr, ai_addrlen) < 0)
+    if(sendto(socketFd, buffer, 21, 0, ai_addr, ai_addrlen) < 0)
         error("Sendto()");
 
     saveLog("Waiting for confirmation", ai_addr, port);
