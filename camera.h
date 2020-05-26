@@ -78,8 +78,6 @@ public:
     }
     void test(char buffer[])
     {
-
-        buffer[0] = TEST_ACK;
         buffer[1] = 0;
         if (resVertical != 0)
         {

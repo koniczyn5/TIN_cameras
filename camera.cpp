@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <chrono>
 #include <unistd.h>
+
 #define NUM_THREADS 5
 #define SEND_PHOTO_INTERVAL 120
 #define ADDRESS_SIZE 46
@@ -101,13 +102,13 @@ void *photoSender(void *data)
 
                     int bufferSize;
                     if (i == size)
-                        bufferSize = fileMessage.get_last_package_size();
+                        bufferSize = fileMessage.get_last_package_size()+9;
                     else
-                        bufferSize = fileMessage.get_package_size();
+                        bufferSize = fileMessage.get_package_size()+9;
                     char *temp = fileMessage.sendPackage(i);
                     memcpy(buffer, temp, bufferSize);
                     delete[] temp;
-                    if (sendto(socket_, buffer, bufferSize + 9, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
+                    if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
@@ -117,7 +118,7 @@ void *photoSender(void *data)
                 pthread_mutex_unlock(&mutexIpv6);
                 while (true)
                 {
-                    if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto6), &len6) < 0)
+                    if (recvfrom(socket_, buffer, 5, 0, (struct sockaddr *)&(gatePhoto6), &len6) < 0)
                     {
                         perror("recvfrom() ERROR");
                         exit(1);
@@ -135,23 +136,23 @@ void *photoSender(void *data)
                         char *temp;
                         if (*packageNr == 0)
                         {
-                            bufferSize = fileMessage.get_file_name_size() + 4;
+                            bufferSize = fileMessage.get_file_name_size() + 13;
                             temp = fileMessage.sendFileInfo();
                         }
                         else if (*packageNr == size)
                         {
-                            bufferSize = fileMessage.get_last_package_size();
+                            bufferSize = fileMessage.get_last_package_size()+9;
                             temp = fileMessage.sendPackage(*packageNr);
                         }
                         else
                         {
-                            bufferSize = fileMessage.get_package_size();
+                            bufferSize = fileMessage.get_package_size()+9;
                             temp = fileMessage.sendPackage(*packageNr);
                         }
                         memcpy(buffer, temp, bufferSize);
                         delete[] temp;
                         pthread_mutex_lock(&mutexIpv6);
-                        if (sendto(socket_, buffer, bufferSize + 9, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
+                        if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
                         {
                             perror("sendto() ERROR");
                             exit(5);
@@ -215,15 +216,15 @@ void *photoSender(void *data)
 
                     int bufferSize;
                     if (i == size)
-                        bufferSize = fileMessage.get_last_package_size();
+                        bufferSize = fileMessage.get_last_package_size()+9;
                     else
-                        bufferSize = fileMessage.get_package_size();
+                        bufferSize = fileMessage.get_package_size()+9;
                     char *temp = fileMessage.sendPackage(i);
                     memcpy(buffer, temp, bufferSize);
                     delete[] temp;
                     string logText = "sending photo file  package nr " + to_string(i) + " ";
                     saveLog(logText, *ipv6, gateAdress, true);
-                    if (sendto(socket_, buffer, bufferSize + 9, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
+                    if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
@@ -259,17 +260,17 @@ void *photoSender(void *data)
                         char *temp;
                         if (*packageNr == 0)
                         {
-                            bufferSize = fileMessage.get_file_name_size() + 4;
+                            bufferSize = fileMessage.get_file_name_size() + 13;
                             temp = fileMessage.sendFileInfo();
                         }
                         else if (*packageNr == size)
                         {
-                            bufferSize = fileMessage.get_last_package_size();
+                            bufferSize = fileMessage.get_last_package_size()+9;
                             temp = fileMessage.sendPackage(*packageNr);
                         }
                         else
                         {
-                            bufferSize = fileMessage.get_package_size();
+                            bufferSize = fileMessage.get_package_size()+9;
                             temp = fileMessage.sendPackage(*packageNr);
                         }
                         memcpy(buffer, temp, bufferSize);
@@ -278,7 +279,7 @@ void *photoSender(void *data)
                         saveLog(logText, *ipv6, gateAdress, true);
                         pthread_mutex_lock(&mutexIpv4);
 
-                        if (sendto(socket_, buffer, bufferSize + 9, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
+                        if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                         {
                             perror("sendto() ERROR");
                             exit(5);
@@ -522,11 +523,11 @@ void *listener(void *data)
                 camera.configure(buffer);
                 memset(buffer, 0, sizeof(buffer));
                 buffer[0] = CONF_ACK;
-
+                camera.test(buffer);
                 if (*ipv6)
                 {
                     pthread_mutex_lock(&mutexIpv6);
-                    if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate6), len6) < 0)
+                    if (sendto(socket_, buffer, 2, 0, (struct sockaddr *)(&gate6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
@@ -536,7 +537,7 @@ void *listener(void *data)
                 else
                 {
                     pthread_mutex_lock(&mutexIpv4);
-                    if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate4), len4) < 0)
+                    if (sendto(socket_, buffer, 2, 0, (struct sockaddr *)(&gate4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
@@ -550,12 +551,14 @@ void *listener(void *data)
             else if (buffer[0] == TEST_REQ)
             {
                 memset(buffer, 0, sizeof(buffer));
+                
+                buffer[0] = TEST_ACK;
                 camera.test(buffer);
                 saveLog("test req", *ipv6, gateAdress, false);
                 if (*ipv6)
                 {
                     pthread_mutex_lock(&mutexIpv6);
-                    if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate6), len6) < 0)
+                    if (sendto(socket_, buffer, 2, 0, (struct sockaddr *)(&gate6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
