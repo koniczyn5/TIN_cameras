@@ -1,4 +1,4 @@
-// Gate
+// gate.cpp
 // Projekt: Camera-Link
 // Autor: Konrad Meysztowicz-Wiśniewski
 // Data utworzenia: 16.04.2020

@@ -1,3 +1,8 @@
+// gate.h
+// Projekt: Camera-Link
+// Autor: Konrad Meysztowicz-Wiśniewski
+// Data utworzenia: 22.05.2020
+
 #ifndef GATE_H
 #define GATE_H
 
