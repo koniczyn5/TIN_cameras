@@ -14,7 +14,6 @@
 class FileMessage {
 private:
 	
-	int package_size = 500;
 	int package_amount = 0;
 	int last_package_size = 0;
 	int file_name_size = 0;
@@ -23,6 +22,7 @@ private:
 	char * file_name;
 
 public:
+	const static int package_size = 500;
 	//constructor with filepath as argument
 	FileMessage(char id, const char * file_path, char * file_name, int file_name_size);
 	//constructor with buffer stream as argument
