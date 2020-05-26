@@ -52,7 +52,6 @@ BOOST_AUTO_TEST_CASE(CameraTest_test)
     camera.configure(buffer);
     memset(buffer, 0, sizeof(buffer));
     camera.test(buffer);
-    BOOST_CHECK(buffer[0]==TEST_ACK);
     BOOST_CHECK(buffer[1]==31);
 }
 

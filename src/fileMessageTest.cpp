@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(sendFileName_test)
 
 	FileMessage *filemessage4 = new FileMessage(id, "test4.txt", arr, sizeof(arr));
 
-	char *arr2 = new char[9 + sizeof(arr)];
+	char *arr2 = new char[13 + sizeof(arr)];
 	int x = 1;
 	arr2[0] = DATA_HDR;
 	*(int*)&arr2[1] = sizeof(arr);

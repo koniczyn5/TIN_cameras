@@ -99,11 +99,6 @@ char FileMessage::get_id()
 	return id;
 }
 
-void FileMessage::set_package_size(int new_package_size)
-{
-	package_size = new_package_size;
-}
-
 void FileMessage::set_file_name_size(int new_file_name_size)
 {
 	file_name_size = new_file_name_size;
@@ -163,7 +158,7 @@ char * FileMessage::sendPackage(int packageId)
 {
 	int x;
 	if (packageId < get_package_amount())
-		x = get_package_size();
+		x = package_size;
 	else if (packageId == get_package_amount())
 		x = get_last_package_size();
 	else

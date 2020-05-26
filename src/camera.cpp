@@ -77,7 +77,6 @@ void *photoSender(void *data)
 
         while (true)
         {
-            //send photo
             while (!camera.isConfigured())
                 ;
             std::fstream file;
@@ -104,7 +103,7 @@ void *photoSender(void *data)
                     if (i == size)
                         bufferSize = fileMessage.get_last_package_size()+9;
                     else
-                        bufferSize = fileMessage.get_package_size()+9;
+                        bufferSize = package_size+9;
                     char *temp = fileMessage.sendPackage(i);
                     memcpy(buffer, temp, bufferSize);
                     delete[] temp;
@@ -146,7 +145,7 @@ void *photoSender(void *data)
                         }
                         else
                         {
-                            bufferSize = fileMessage.get_package_size()+9;
+                            bufferSize = package_size+9;
                             temp = fileMessage.sendPackage(*packageNr);
                         }
                         memcpy(buffer, temp, bufferSize);
@@ -185,11 +184,9 @@ void *photoSender(void *data)
         }
 
         socklen_t len4 = sizeof(gate4);
-        //while (true)
         {
             char gateAdress[ADDRESS_SIZE];
             inet_ntop(AF_INET, &gatePhoto4.sin_addr, gateAdress, sizeof(gateAdress));
-            //send photo
             while (!camera.isConfigured())
                 ;
             std::fstream file;
@@ -218,7 +215,7 @@ void *photoSender(void *data)
                     if (i == size)
                         bufferSize = fileMessage.get_last_package_size()+9;
                     else
-                        bufferSize = fileMessage.get_package_size()+9;
+                        bufferSize = package_size+9;
                     char *temp = fileMessage.sendPackage(i);
                     memcpy(buffer, temp, bufferSize);
                     delete[] temp;
@@ -270,7 +267,7 @@ void *photoSender(void *data)
                         }
                         else
                         {
-                            bufferSize = fileMessage.get_package_size()+9;
+                            bufferSize = package_size+9;
                             temp = fileMessage.sendPackage(*packageNr);
                         }
                         memcpy(buffer, temp, bufferSize);
@@ -376,8 +373,6 @@ void *listener(void *data)
     {
         cout << "waiting for gate msg\n";
         char from[ADDRESS_SIZE] = {};
-        //struct pollfd pfd = {.fd = socket_, .events = POLLIN};
-        //poll(&pfd, 1, 1000);
         if (*ipv6)
         {
 
@@ -568,7 +563,7 @@ void *listener(void *data)
                 else
                 {
                     pthread_mutex_lock(&mutexIpv4);
-                    if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate4), len4) < 0)
+                    if (sendto(socket_, buffer, 2, 0, (struct sockaddr *)(&gate4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
