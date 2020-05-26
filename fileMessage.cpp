@@ -9,22 +9,7 @@
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
 //packages are labeled from 1 to n
 
-enum Message_type {
-	TEST_REQ,
-	TEST_ACK,
-	CONF_REQ,
-	CONF_ACK,
-	INST_REQ,
-	INST_ACK,
-	DISC_REQ,
-	DISC_ACK,
-	DATA_MSG,
-	DATA_RQT,
-	DATA_ACK,
-	DATA_HDR,
-	NO_PAIR,
-	IS_PAIR
-};
+
 
 class FileMessage {
 private:
@@ -196,7 +181,12 @@ public:
 		}
 		//package attributes
 		char * arr = new char[x + 9];
+		
 		arr[0] = id;
+		*(int*)&arr[1] = packageId;
+		*(int*)&arr[5] = package_amount;
+		
+		/*
 		arr[1] = (packageId >> 24) & 0xFF;
 		arr[2] = (packageId >> 16) & 0xFF;
 		arr[3] = (packageId >> 8) & 0xFF;
@@ -205,6 +195,7 @@ public:
 		arr[6] = (package_amount >> 16) & 0xFF;
 		arr[7] = (package_amount >> 8) & 0xFF;
 		arr[8] = package_amount & 0xFF;
+		*/
 		//package data
 		memcpy(arr + 9, buffer_code + ((packageId-1) * package_size), x);
 		return arr;
@@ -215,6 +206,10 @@ public:
 		//file name attributes
 		char *arr = new char[9 + file_name_size];
 		arr[0] = DATA_HDR;
+		*(int*)&arr[1] = file_name_size;
+		*(int*)&arr[5] = package_amount;
+
+		/*
 		arr[1] = (file_name_size >> 24) & 0xFF;
 		arr[2] = (file_name_size >> 16) & 0xFF;
 		arr[3] = (file_name_size >> 8) & 0xFF;
@@ -223,6 +218,7 @@ public:
 		arr[6] = (package_amount >> 16) & 0xFF;
 		arr[7] = (package_amount >> 8) & 0xFF;
 		arr[8] = package_amount & 0xFF;
+		*/
 		//file name data
 		memcpy(arr + 9, file_name , file_name_size);
 		return arr;

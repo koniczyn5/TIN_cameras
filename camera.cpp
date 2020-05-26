@@ -13,10 +13,11 @@
 #define NUM_THREADS 5
 #define SEND_PHOTO_INTERVAL 120
 #define ADDRESS_SIZE 46
+#define TIMEOUT 5
 Camera camera;
-int gatePort4;
-int gatePort6;
-int gatePhotoPort;
+int gatePort4=6666;
+int gatePort6=6667;
+int gatePhotoPort=6668;
 bool isIpv6connected = false;
 bool isIpv4connected = false;
 pthread_cond_t ipv4_cond;
@@ -144,7 +145,25 @@ void *photoSender(void *data)
     }
     else
     {
-        const int socket_ = socket(AF_INET, SOCK_DGRAM, 0);
+       
+
+        struct timeval timeout;
+        timeout.tv_sec = TIMEOUT;
+        timeout.tv_usec = 0;
+ const int socket_ = socket(AF_INET, SOCK_DGRAM, 0);
+    if(socket_ < 0)
+    {
+        perror("Open socket");
+        exit(5);
+    }
+    if(setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
+        {
+        perror("Setsockopt()");
+        exit(5);
+        }
+
+
+
         socklen_t len4 = sizeof(gate4);
         //while (true)
         {
@@ -194,10 +213,15 @@ void *photoSender(void *data)
                     while (1)
                     {
                          saveLog( "waiting for data ACK", *ipv6, gateAdress,true);  
-                        if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto4), &len4) < 0)
+                        if ( recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto4), &len4) < 0)
                         {
+                            if(errno == EAGAIN || errno == EWOULDBLOCK)
+                            {
+                            saveLog("Recv for data_ack timout ",*ipv6,gateAdress,true);
+
+                            }
                             perror("recvfrom() ERROR");
-                            exit(1);
+                            break;
                         }
 
                         if (buffer[0] == DATA_ACK)
