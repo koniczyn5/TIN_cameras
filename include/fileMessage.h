@@ -14,7 +14,7 @@
 class FileMessage {
 private:
 	
-	int package_size = 512;
+	int package_size = 500;
 	int package_amount = 0;
 	int last_package_size = 0;
 	int file_name_size = 0;
