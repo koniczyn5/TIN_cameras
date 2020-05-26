@@ -1,6 +1,6 @@
-// MessageTests
+// messageTest.cpp
 // Projekt:	Camera-Link
-// Autor: �ukasz Rombel
+// Autor: Lukasz Rombel
 // Data utworzenia: 23.05.2020
 #include "message.h"
 

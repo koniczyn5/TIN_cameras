@@ -1,8 +1,9 @@
-// Message
+// fileMessageTest.cpp
 // Projekt:	Camera-Link
-// Autor: �ukasz Rombel
+// Autor: Lukasz Rombel
 // Data utworzenia: 23.05.2020
 #include "fileMessage.h"
+#include <filesystem>
 
 #define BOOST_TEST_MODULE FileMessageTests
 #include <boost/test/included/unit_test.hpp>

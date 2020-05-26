@@ -1,7 +1,7 @@
-// Message
+// message.cpp
 // Projekt:	Camera-Link
-// Autor: �ukasz Rombel
-// Data utworzenia: 02.05.2020
+// Autor: Lukasz Rombel
+// Data utworzenia: 18.04.2020
 #include <message.h>
 
 //constructors

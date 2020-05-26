@@ -1,6 +1,6 @@
-// Message
+// fileMessage.cpp
 // Projekt:	Camera-Link
-// Autor: �ukasz Rombel
+// Autor: Lukasz Rombel
 // Data utworzenia: 18.05.2020
 #include <string.h>
 #include "fileMessage.h"
@@ -23,13 +23,18 @@ FileMessage::FileMessage(char id, const char * file_path, char * file_name, int 
 			//copy buffer to buffer_code
 			file_buffer.seekg(0, file_buffer.end);
 			int size = file_buffer.tellg();
-			buffer_code = new char [size];
-			file_buffer.seekg(0, std::ios::beg);
-			file_buffer.read(buffer_code, size);
+			if (size != 0)
+			{
+				buffer_code = new char[size];
+				file_buffer.seekg(0, std::ios::beg);
+				file_buffer.read(buffer_code, size);
 
-			//initialize package_amount and last_package_size
-			set_package_amount(((int)(size / package_size) + 1));
-			set_last_package_size((int)(size - (package_amount - 1) * package_size));
+				//initialize package_amount and last_package_size
+				set_package_amount(((int)(size / package_size) + 1));
+				set_last_package_size((int)(size - (package_amount - 1) * package_size));
+			}
+			else
+				throw "Empty file";
 		}
 		else
 			throw "File is closed or nonexsistent";
@@ -52,12 +57,18 @@ FileMessage::FileMessage(char id, std::fstream& file_buffer, char * file_name, i
 			//copy buffer to buffer_code
 			file_buffer.seekg(0, file_buffer.end);
 			int size = file_buffer.tellg();
-			buffer_code = new char[size];
-			file_buffer.seekg(0, std::ios::beg);
-			file_buffer.read(buffer_code, size);
-			//initialize package_amount and last_package_size
-			set_package_amount(((int)(size / package_size) + 1));
-			set_last_package_size((int)(size - (package_amount - 1) * package_size));
+			if (size != 0)
+			{
+				buffer_code = new char[size];
+				file_buffer.seekg(0, std::ios::beg);
+				file_buffer.read(buffer_code, size);
+
+				//initialize package_amount and last_package_size
+				set_package_amount(((int)(size / package_size) + 1));
+				set_last_package_size((int)(size - (package_amount - 1) * package_size));
+			}
+			else
+				throw "Empty file";
 		}
 		else
 			throw "File is closed or nonexsistent";
