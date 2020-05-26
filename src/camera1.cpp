@@ -77,7 +77,7 @@ void *photoSender(void *data)
             }
             memset(buffer, 0, sizeof(buffer));
             int size = fileMessage.get_package_amount();
-            for (int i = 0; i <= size; ++i)
+            for (int i = 1; i <= size; ++i)
             {
                 strcpy(buffer, fileMessage.sendPackage(i));
                 int bufferSize;
@@ -153,7 +153,7 @@ void *photoSender(void *data)
                     memset(buffer, 0, sizeof(buffer));
                     int size = fileMessage.get_package_amount();
 
-                    for (int i = 0; i <= size; ++i)
+                    for (int i = 1; i <= size; ++i)
                     {
                         strcpy(buffer, fileMessage.sendPackage(i));
                         int bufferSize;
