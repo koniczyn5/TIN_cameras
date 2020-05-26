@@ -3,6 +3,7 @@
 // Autor: Lukasz Rombel
 // Data utworzenia: 23.05.2020
 #include "fileMessage.h"
+#include <filesystem>
 
 #define BOOST_TEST_MODULE FileMessageTests
 #include <boost/test/included/unit_test.hpp>
@@ -67,7 +68,12 @@ BOOST_AUTO_TEST_CASE(sendPackage_test)
 		char * temp_arr = new char[size + 9];
 		char * tmp = new char[size];
 
+		int x = 1;
 		temp_arr[0] = id;
+		*(int*)&temp_arr[1] = x;
+		*(int*)&temp_arr[5] = x;
+
+		/*
 		temp_arr[1] = (1 >> 24) & 0xFF;
 		temp_arr[2] = (1 >> 16) & 0xFF;
 		temp_arr[3] = (1 >> 8) & 0xFF;
@@ -76,6 +82,7 @@ BOOST_AUTO_TEST_CASE(sendPackage_test)
 		temp_arr[6] = (1 >> 16) & 0xFF;
 		temp_arr[7] = (1 >> 8) & 0xFF;
 		temp_arr[8] = 1 & 0xFF;
+		*/
 		file_buffer.read(tmp, size);
 		memcpy(temp_arr + 9, tmp, size);
 		BOOST_CHECK_EQUAL(filemessage3->sendPackage(1), temp_arr);
@@ -103,7 +110,11 @@ BOOST_AUTO_TEST_CASE(sendFileName_test)
 	FileMessage *filemessage4 = new FileMessage(id, "test4.txt", arr, sizeof(arr));
 
 	char *arr2 = new char[9 + sizeof(arr)];
+	int x = 1;
 	arr2[0] = DATA_HDR;
+	*(int*)&arr2[1] = sizeof(arr);
+	*(int*)&arr2[5] = x;
+	/*
 	arr2[1] = (sizeof(arr) >> 24) & 0xFF;
 	arr2[2] = (sizeof(arr) >> 16) & 0xFF;
 	arr2[3] = (sizeof(arr) >> 8) & 0xFF;
@@ -112,6 +123,7 @@ BOOST_AUTO_TEST_CASE(sendFileName_test)
 	arr2[6] = (1 >> 16) & 0xFF;
 	arr2[7] = (1 >> 8) & 0xFF;
 	arr2[8] = 1 & 0xFF;
+	*/
 	memcpy(arr2 + 9, arr, sizeof(arr));
 	BOOST_CHECK_EQUAL(filemessage4->sendFileInfo(), arr2);
 	delete arr2;
