@@ -18,7 +18,7 @@ OBJ := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 all: $(EXE)
 
-test: $(TESTS) $(TEST_DIR)/cameraTesting1 $(TEST_DIR)/gateTesting1 $(TEST_DIR)/multipleCameraTesting
+test: $(TESTS) $(TEST_DIR)/cameraTesting1 #$(TEST_DIR)/gateTesting1 $(TEST_DIR)/multipleCameraTesting
 
 camera: $(OBJ_DIR)/message.o $(OBJ_DIR)/fileMessage.o $(OBJ_DIR)/camera.o
 		$(CC) $(LDFLAGS) $^ -o $@
@@ -30,7 +30,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 		$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
-		mkdir $@
+		mkdir -p $@
 
 $(TEST_DIR)/messageTest:  $(OBJ_DIR)/messageTest.o $(OBJ_DIR)/message.o | $(TEST_DIR)
 		$(CC) $(LDFLAGS) $^ -o $(TEST_DIR)/messageUnitTest
@@ -38,32 +38,32 @@ $(TEST_DIR)/messageTest:  $(OBJ_DIR)/messageTest.o $(OBJ_DIR)/message.o | $(TEST
 $(TEST_DIR)/fileMessageTest: $(OBJ_DIR)/fileMessageTest.o $(OBJ_DIR)/fileMessage.o| $(TEST_DIR)
 		$(CC) $(LDFLAGS) $^ -o $(TEST_DIR)/fileMessageUnitTest
 
-$(TEST_DIR)/CameraTest: $(OBJ_DIR)/camera.o | $(TEST_DIR)
+$(TEST_DIR)/CameraTest: $(OBJ_DIR)/CameraTests.o $(OBJ_DIR)/fileMessage.o | $(TEST_DIR)
 		$(CC) $(LDFLAGS) $^ -o $(TEST_DIR)/cameraUnitTest
 
-$(TEST_DIR)/cameraTesting1: $(OBJ_DIR)/camera1.o $(OBJ_DIR)/gate1.o #TODO test zaniku napiecia na kamerze
-		mkdir $@
-		mkdir $@/camera
-		mkdir $@/gate
-		$(CC) $^ -o $@/camera/camera1
-		$(CC) $^ -o $@/gate/gate1
+$(TEST_DIR)/cameraTesting1: MKDIRS $(OBJ_DIR)/camera1.o $(OBJ_DIR)/gate1.o
+		$(CC) $(LDFLAGS) $(OBJ_DIR)/camera1.o -o $@/camera/camera1
+		$(CC) $(LDFLAGS) $(OBJ_DIR)/gate1.o -o $@/gate/gate1
 
-$(TEST_DIR)/gateTesting1: $(OBJ_DIR)/camera2.o $(OBJ_DIR)/gate2.o #TODO test zaniku napiecia na bramce
-		mkdir $@
-		mkdir $@/camera
-		mkdir $@/gate
-		$(CC) $^ -o $@/camera/camera2
-		$(CC) $^ -o $@/gate/gate2
+MKDIRS:
+		mkdir -p $(TEST_DIR)/cameraTesting1/camera
+		mkdir -p $(TEST_DIR)/cameraTesting1/gate
+		mkdir -p $(TEST_DIR)/gateTesting1/camera
+		mkdir -p $(TEST_DIR)/gateTesting1/gate
+		mkdir -p $(TEST_DIR)/multipleCameraTesting/camera
+		mkdir -p $(TEST_DIR)/multipleCameraTesting/gate
 
-$(TEST_DIR)/multipleCameraTesting: $(OBJ_DIR)/camera3.o $(OBJ_DIR)/gate3.o
-		mkdir $@
-		mkdir $@/camera
-		mkdir $@/gate
-		$(CC) $^ -o $@/camera/camera3
-		$(CC) $^ -o $@/gate/gate3
+
+$(TEST_DIR)/gateTesting1: MKDIRS $(OBJ_DIR)/camera2.o $(OBJ_DIR)/gate2.o #TODO test zaniku napiecia na bramce
+		$(CC) $(LDFLAGS) $(OBJ_DIR)/camera2.o -o $@/camera/camera2
+		$(CC) $(LDFLAGS) $(OBJ_DIR)/gate2.o -o $@/gate/gate2
+
+$(TEST_DIR)/multipleCameraTesting: MKDIRS $(OBJ_DIR)/camera3.o $(OBJ_DIR)/gate3.o #TODO test wielu kamer
+		$(CC) $(LDFLAGS) $(OBJ_DIR)/camera3.o -o $@/camera/camera3
+		$(CC) $(LDFLAGS) $(OBJ_DIR)/gate3.o -o $@/gate/gate3
 
 $(TEST_DIR):
-		mkdir $@
+		mkdir -p $@
 
 cleanTestTexts:
 		rm -f $(TEST_DIR)/*.txt
