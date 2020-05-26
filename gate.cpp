@@ -393,7 +393,6 @@ int main (int argc, char *argv[])
     int connectSocketFd, recvSocketFd;
     addrinfo hints;
     addrinfo *cameraInfo;
-    stop = false;
 
 	if(argc < 3)
 	{
