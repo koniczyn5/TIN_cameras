@@ -12,7 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <poll.h>
-#define BUFFER_LEN 512
+#define BUFFER_LEN 4096
 using namespace std;
 class Camera
 {
