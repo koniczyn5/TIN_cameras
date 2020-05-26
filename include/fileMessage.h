@@ -11,6 +11,8 @@
 //class that loads file, splits into smaller chunks/packages and sends file, one package at the time
 //packages are labeled from 1 to n
 
+extern const int package_size = 500;
+
 class FileMessage {
 private:
 	int package_size = 500;

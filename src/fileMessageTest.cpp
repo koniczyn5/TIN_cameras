@@ -72,16 +72,6 @@ BOOST_AUTO_TEST_CASE(sendPackage_test)
 		*(int*)&temp_arr[1] = x;
 		*(int*)&temp_arr[5] = x;
 
-		/*
-		temp_arr[1] = (1 >> 24) & 0xFF;
-		temp_arr[2] = (1 >> 16) & 0xFF;
-		temp_arr[3] = (1 >> 8) & 0xFF;
-		temp_arr[4] = 1 & 0xFF;
-		temp_arr[5] = (1 >> 24) & 0xFF;
-		temp_arr[6] = (1 >> 16) & 0xFF;
-		temp_arr[7] = (1 >> 8) & 0xFF;
-		temp_arr[8] = 1 & 0xFF;
-		*/
 		file_buffer.read(tmp, size);
 		memcpy(temp_arr + 9, tmp, size);
 		BOOST_CHECK_EQUAL(filemessage3->sendPackage(1), temp_arr);
@@ -113,17 +103,9 @@ BOOST_AUTO_TEST_CASE(sendFileName_test)
 	arr2[0] = DATA_HDR;
 	*(int*)&arr2[1] = sizeof(arr);
 	*(int*)&arr2[5] = x;
-	/*
-	arr2[1] = (sizeof(arr) >> 24) & 0xFF;
-	arr2[2] = (sizeof(arr) >> 16) & 0xFF;
-	arr2[3] = (sizeof(arr) >> 8) & 0xFF;
-	arr2[4] = sizeof(arr) & 0xFF;
-	arr2[5] = (1 >> 24) & 0xFF;
-	arr2[6] = (1 >> 16) & 0xFF;
-	arr2[7] = (1 >> 8) & 0xFF;
-	arr2[8] = 1 & 0xFF;
-	*/
-	memcpy(arr2 + 9, arr, sizeof(arr));
+	*(int*)&arr2[9] = filemessage4->get_last_package_size();
+
+	memcpy(arr2 + 13, arr, sizeof(arr));
 	BOOST_CHECK_EQUAL(filemessage4->sendFileInfo(), arr2);
 	delete arr2;
 	delete filemessage4;
