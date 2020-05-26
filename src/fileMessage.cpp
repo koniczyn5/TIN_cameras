@@ -191,7 +191,8 @@ char * FileMessage::sendFileInfo()
 	arr[0] = DATA_HDR;
 	*(int*)&arr[1] = file_name_size;
 	*(int*)&arr[5] = package_amount;
+	*(int*)&arr[9] = last_package_size;
 	//file name data
-	memcpy(arr + 9, file_name , file_name_size);
+	memcpy(arr + 13, file_name , file_name_size);
 	return arr;
 }
