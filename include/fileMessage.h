@@ -22,7 +22,7 @@ private:
 	char * file_name;
 
 public:
-	static int package_size = 500;
+	const static int package_size = 500;
 	//constructor with filepath as argument
 	FileMessage(char id, const char * file_path, char * file_name, int file_name_size);
 	//constructor with buffer stream as argument
