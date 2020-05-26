@@ -13,7 +13,9 @@
 #define TIMEOUT 1
 #define FAILNUM 3
 #define PHOTOINTERVAL 5.0
-#define PHOTOEXTENTION ".png"
+#define PHOTOEXTENTION ".txt"
+
+int package_size = 500;
 
 std::string ipToString(const struct sockaddr *ipAddress)
 {
@@ -182,13 +184,11 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     saveLog("Receiving data transfer from camera", ai_addr, port);
     int packetNum;
     int nOfPackets = *(int*)&buffer[5];
-    //nOfPackets = buffer[5]<<24 | buffer[6]<<16 | buffer[7]<<8 | buffer[8];
     bool received[nOfPackets+1];
     for(int i = 0; i < nOfPackets+1; ++i)
         received[i] = false;
-    char dataBuffer[nOfPackets*PACKETSIZE];
-    memset(dataBuffer, 0, nOfPackets*PACKETSIZE);
-
+    char dataBuffer[nOfPackets*package_size];
+    memset(dataBuffer, 0, nOfPackets*package_size);
     int receivedCount = 0;
 
     if(buffer[0] == DATA_HDR)
@@ -198,7 +198,6 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     }
     else
     {
-        //packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
         packetNum = *(int*)&buffer[1];
         received[packetNum] = true;
         ++receivedCount;
@@ -223,11 +222,10 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
         }
         else
         {
-            //packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
             packetNum = *(int*)&buffer[1];
             received[packetNum] = true;
             ++receivedCount;
-            memcpy(dataBuffer + (packetNum-1)*PACKETSIZE, buffer + 9, PACKETSIZE);
+            memcpy(dataBuffer + (packetNum-1)*package_size, buffer + 9, package_size);
         }
     }
     if(receivedCount < nOfPackets+1)
@@ -240,10 +238,8 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
             {
                 memset(buffer, 0, BUFFER_LEN);
                 buffer[0] = DATA_RQT;
-                //int *rqtNum = (int*)&buffer[1];
-                //*rqtNum = currentPacket;
                 *(int*)&buffer[1] = currentPacket;
-                if(sendto(socketFd, buffer, BUFFER_LEN, 0, ai_addr, ai_addrlen) < 0)
+                if(sendto(socketFd, buffer, 5, 0, ai_addr, ai_addrlen) < 0)
                     error("Sendto()");
                 memset(buffer, 0, BUFFER_LEN);
                 if(recvfrom(socketFd, buffer, BUFFER_LEN, 0, ai_addr, &ai_addrlen) < 0)
@@ -262,13 +258,12 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
                 }
                 else
                 {
-                    //packetNum = buffer[1]<<24 | buffer[2]<<16 | buffer[3]<<8 | buffer[4];
                     packetNum = *(int*)&buffer[1];
                     if(packetNum <= 0)
                         continue;
                     received[packetNum] = true;
                     ++receivedCount;
-                    memcpy(dataBuffer + (packetNum-1)*PACKETSIZE, buffer + 9, PACKETSIZE);
+                    memcpy(dataBuffer + (packetNum-1)*package_size, buffer + 9, package_size);
                 }
                 fails=0;
             }
@@ -283,7 +278,7 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     saveLog("Photo received, sending DATA_ACK", ai_addr, port);
     memset(buffer, 0, BUFFER_LEN);
     buffer[0] = DATA_ACK;
-    if(sendto(socketFd, buffer, BUFFER_LEN, 0, ai_addr, ai_addrlen) < 0)
+    if(sendto(socketFd, buffer, 1, 0, ai_addr, ai_addrlen) < 0)
         error("Sendto()");
 
 
@@ -297,14 +292,15 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     std::replace(fileName.begin(), fileName.end(), ':', '-');
     std::replace(fileName.begin(), fileName.end(), '.', '-');
     fileName = fileName + PHOTOEXTENTION;
-    photoFile.open(fileName, std::fstream::in | std::fstream::out | std::fstream::trunc);
+
+    photoFile.open(fileName, std::fstream::in | std::fstream::out | std::fstream::trunc | std::fstream::binary);
     if(!photoFile.is_open())
     {
         saveLog("Failed to open photo file", ai_addr, port);
         return;
     }
     saveLog("Photo saved", ai_addr, port);
-    photoFile << dataBuffer;
+    photoFile.write(dataBuffer, nOfPackets*package_size);
     photoFile.close();
     shutdown(socketFd, SHUT_RDWR);
 }
@@ -444,35 +440,10 @@ int main (int argc, char *argv[])
         exit(1);
     }
 
-//    if(argc > 3 && strncmp(argv[3], "-i", 3) == 0)
-//    {
-//        if(!installCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2])))
-//            exit(1);
-//    }
-//    if(argc > 3 && strncmp(argv[3], "-d", 3) == 0)
-//    {
-//        if(!disconnectCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2])))
-//            exit(1);
-//    }
-
-//    if(argc > 3 && strncmp(argv[3], "-c", 3) == 0)
-//    {
-//        configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
-//    }
-
-//    testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
-
-//    while(true)
-//    {
-//        photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
-//    }
-
-
     std::string input;
     while(true)
     {
         std::cout << "Enter Command:\n";
-        std::cout << "use 'help' for list of commands\n";
         getline(std::cin, input);
         if(input == "test")
             testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
