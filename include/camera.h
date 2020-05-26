@@ -12,7 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <poll.h>
-#define BUFFER_LEN 512
+#define BUFFER_LEN 4096
 using namespace std;
 class Camera
 {
@@ -23,7 +23,6 @@ private:
     float interval;
     float jitter;
     char password[4];
-
 public:
     Camera()
     {
@@ -79,8 +78,6 @@ public:
     }
     void test(char buffer[])
     {
-
-        buffer[0] = TEST_ACK;
         buffer[1] = 0;
         if (resVertical != 0)
         {
@@ -107,6 +104,7 @@ public:
             ++buffer[1];
         }
     }
+
     bool isConfigured()
     {
         if (resHorizontal > 0 && resVertical > 0 && focalLength > 0 && interval > 0 && jitter > 0)

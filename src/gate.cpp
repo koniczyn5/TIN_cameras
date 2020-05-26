@@ -13,7 +13,7 @@
 #define TIMEOUT 1
 #define FAILNUM 3
 #define PHOTOINTERVAL 5.0
-#define PHOTOEXTENTION ".png"
+#define PHOTOEXTENTION ".jpg"
 
 std::string ipToString(const struct sockaddr *ipAddress)
 {
@@ -243,7 +243,7 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
                 //int *rqtNum = (int*)&buffer[1];
                 //*rqtNum = currentPacket;
                 *(int*)&buffer[1] = currentPacket;
-                if(sendto(socketFd, buffer, BUFFER_LEN, 0, ai_addr, ai_addrlen) < 0)
+                if(sendto(socketFd, buffer, 5, 0, ai_addr, ai_addrlen) < 0)
                     error("Sendto()");
                 memset(buffer, 0, BUFFER_LEN);
                 if(recvfrom(socketFd, buffer, BUFFER_LEN, 0, ai_addr, &ai_addrlen) < 0)
@@ -283,7 +283,7 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     saveLog("Photo received, sending DATA_ACK", ai_addr, port);
     memset(buffer, 0, BUFFER_LEN);
     buffer[0] = DATA_ACK;
-    if(sendto(socketFd, buffer, BUFFER_LEN, 0, ai_addr, ai_addrlen) < 0)
+    if(sendto(socketFd, buffer, 1, 0, ai_addr, ai_addrlen) < 0)
         error("Sendto()");
 
 
@@ -297,14 +297,14 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     std::replace(fileName.begin(), fileName.end(), ':', '-');
     std::replace(fileName.begin(), fileName.end(), '.', '-');
     fileName = fileName + PHOTOEXTENTION;
-    photoFile.open(fileName, std::fstream::in | std::fstream::out | std::fstream::trunc);
+    photoFile.open(fileName, std::fstream::in | std::fstream::out | std::fstream::trunc | std::fstream::binary);
     if(!photoFile.is_open())
     {
         saveLog("Failed to open photo file", ai_addr, port);
         return;
     }
     saveLog("Photo saved", ai_addr, port);
-    photoFile << dataBuffer;
+    photoFile.write(dataBuffer, nOfPackets*PACKETSIZE);
     photoFile.close();
     shutdown(socketFd, SHUT_RDWR);
 }
