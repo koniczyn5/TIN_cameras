@@ -184,7 +184,7 @@ char * FileMessage::sendPackage(int packageId)
 char * FileMessage::sendFileInfo()
 {
 	//file name attributes
-	char *arr = new char[9 + file_name_size];
+	char *arr = new char[13 + file_name_size];
 	arr[0] = DATA_HDR;
 	*(int*)&arr[1] = file_name_size;
 	*(int*)&arr[5] = package_amount;
