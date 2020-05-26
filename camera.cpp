@@ -13,7 +13,7 @@
 #define NUM_THREADS 5
 #define SEND_PHOTO_INTERVAL 120
 #define ADDRESS_SIZE 46
-#define TIMEOUT 5
+#define TIMEOUT 20
 Camera camera;
 int gatePort4=6666;
 int gatePort6=6667;
@@ -82,7 +82,9 @@ void *photoSender(void *data)
             if (fileMessage.get_package_amount()>0)
             {
             pthread_mutex_lock(&mutexIpv6);
-            memcpy(buffer, fileMessage.sendFileInfo(),fileMessage.get_file_name_size()+9);
+            char *temp = fileMessage.sendFileInfo();
+            memcpy(buffer, temp,fileMessage.get_file_name_size()+9);
+            delete[] temp;
             if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
             {
                 perror("sendto() ERROR");
@@ -98,7 +100,9 @@ void *photoSender(void *data)
                     bufferSize = fileMessage.get_last_package_size();
                 else
                     bufferSize = fileMessage.get_package_size();
-                memcpy(buffer, fileMessage.sendPackage(i),bufferSize);
+                    char *temp = fileMessage.sendPackage(i);
+                memcpy(buffer, temp,bufferSize);
+                delete[] temp;
                 if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
                 {
                     perror("sendto() ERROR");
@@ -121,13 +125,15 @@ void *photoSender(void *data)
                 }
                 else if (buffer[0] == DATA_RQT)
                 {
-                    int packageNr = buffer[1];
+                    int *packageNr =(int*)(&buffer[1]);
                     int bufferSize;
-                    if (packageNr == size)
+                    if (*packageNr == size)
                         bufferSize = fileMessage.get_last_package_size();
                     else
                         bufferSize = fileMessage.get_package_size();
-                    memcpy(buffer, fileMessage.sendPackage(packageNr),bufferSize);
+                        char *temp = fileMessage.sendPackage(*packageNr);
+                    memcpy(buffer, temp,bufferSize);
+                    delete[] temp;
                     pthread_mutex_lock(&mutexIpv6);
                     if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
                     {
@@ -135,6 +141,7 @@ void *photoSender(void *data)
                         exit(5);
                     }
                     pthread_mutex_unlock(&mutexIpv6);
+                    delete packageNr;
                     memset(buffer, 0, sizeof(buffer));
                 }
 
@@ -178,7 +185,9 @@ void *photoSender(void *data)
                 
                 if (fileMessage.get_package_amount()>0)
                 {
-                    memcpy(buffer, fileMessage.sendFileInfo(),fileMessage.get_file_name_size()+9);
+                    char *temp = fileMessage.sendFileInfo();
+                    memcpy(buffer, temp,fileMessage.get_file_name_size()+9);
+                    delete[] temp;
                     pthread_mutex_lock(&mutexIpv4);
                     saveLog("sending photo file info", *ipv6, gateAdress,true);
                     if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
@@ -197,8 +206,9 @@ void *photoSender(void *data)
                             bufferSize = fileMessage.get_last_package_size();
                         else
                             bufferSize = fileMessage.get_package_size();
-
-                        memcpy(buffer, fileMessage.sendPackage(i),bufferSize);
+                        char *temp = fileMessage.sendPackage(i);
+                        memcpy(buffer, temp,bufferSize);
+                        delete[] temp;
                         string logText ="sending photo file  package nr " + to_string(i) + " ";
                         saveLog( logText, *ipv6, gateAdress,true);    
                         if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
@@ -233,14 +243,16 @@ void *photoSender(void *data)
                         else if (buffer[0] == DATA_RQT)
                         {
                             saveLog( "DATA_RQT recived", *ipv6, gateAdress,true);    
-                            int packageNr = buffer[1];
+                            int *packageNr =(int*)(&buffer[1]);
                             int bufferSize;
-                            if (packageNr == size)
+                            if (*packageNr == size)
                                 bufferSize = fileMessage.get_last_package_size();
                             else
                                 bufferSize = fileMessage.get_package_size();
-                            memcpy(buffer, fileMessage.sendPackage(packageNr),bufferSize);
-                             string logText ="sending photo file  package nr " + to_string(packageNr) + " ";
+                                char *temp = fileMessage.sendPackage(*packageNr);
+                            memcpy(buffer, temp,bufferSize);
+                            delete[] temp;
+                             string logText ="sending photo file  package nr " + to_string(*packageNr) + " ";
                             saveLog( logText, *ipv6, gateAdress,true);    
                             pthread_mutex_lock(&mutexIpv4);
 
