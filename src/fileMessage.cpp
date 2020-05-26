@@ -102,11 +102,6 @@ void FileMessage::set_package_size(int new_package_size)
 	package_size = new_package_size;
 }
 
-int FileMessage::get_package_size()
-{
-	return package_size;
-}
-
 void FileMessage::set_file_name_size(int new_file_name_size)
 {
 	file_name_size = new_file_name_size;
