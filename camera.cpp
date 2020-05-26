@@ -52,7 +52,6 @@ void *photoSender(void *data)
     bool *ipv6 = (bool *)data;
     char buffer[BUFFER_LEN] = {};
     char filename[10] = "photo.jpg";
-    pthread_exit(NULL);
     if (*ipv6)
     {
         const int socket_ = socket(AF_INET6, SOCK_DGRAM, 0);
@@ -64,12 +63,11 @@ void *photoSender(void *data)
 
             std::fstream file;
             file.open(filename, std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
-            file.seekg(0, file.end);
-
-            file.seekg(0, std::ios::beg);
             FileMessage fileMessage(DATA_MSG, file, filename, sizeof(filename));
+            if (fileMessage.get_package_amount()>0)
+            {
             pthread_mutex_lock(&mutexIpv6);
-            strcpy(buffer, fileMessage.sendFileInfo());
+            memcpy(buffer, fileMessage.sendFileInfo(),fileMessage.get_file_name_size()+9);
             if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
             {
                 perror("sendto() ERROR");
@@ -79,12 +77,13 @@ void *photoSender(void *data)
             int size = fileMessage.get_package_amount();
             for (int i = 0; i < size; ++i)
             {
-                strcpy(buffer, fileMessage.sendPackage(i));
+                
                 int bufferSize;
                 if (i == size - 1)
                     bufferSize = fileMessage.get_last_package_size();
                 else
                     bufferSize = fileMessage.get_package_size();
+                memcpy(buffer, fileMessage.sendPackage(i),bufferSize);
                 if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
                 {
                     perror("sendto() ERROR");
@@ -92,7 +91,8 @@ void *photoSender(void *data)
                 }
                 memset(buffer, 0, sizeof(buffer));
             }
-            while (1)
+            pthread_mutex_unlock(&mutexIpv6);
+            while (true)
             {
                 if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto6), &len6) < 0)
                 {
@@ -112,17 +112,19 @@ void *photoSender(void *data)
                         bufferSize = fileMessage.get_last_package_size();
                     else
                         bufferSize = fileMessage.get_package_size();
-                    strcpy(buffer, fileMessage.sendPackage(packageNr));
+                    memcpy(buffer, fileMessage.sendPackage(packageNr),bufferSize);
+                    pthread_mutex_lock(&mutexIpv6);
                     if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv6);
                     memset(buffer, 0, sizeof(buffer));
                 }
-            }
 
-            pthread_mutex_unlock(&mutexIpv6);
+            }
+            }
             sleep(SEND_PHOTO_INTERVAL);
         }
     }
@@ -135,16 +137,13 @@ void *photoSender(void *data)
             //send photo
             std::fstream file;
             file.open(filename, std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
-            file.seekg(0, file.end);
-            file.seekg(0, std::ios::beg);
             FileMessage fileMessage(DATA_MSG, file, filename, sizeof(filename));
-            if (file.is_open())
-            {
-                pthread_mutex_lock(&mutexIpv4);
-                if (file.is_open())
+            
+                
+                if (fileMessage.get_package_amount()>0)
                 {
-                    strcpy(buffer, fileMessage.sendFileInfo());
-
+                    memcpy(buffer, fileMessage.sendFileInfo(),fileMessage.get_file_name_size()+9);
+                    pthread_mutex_lock(&mutexIpv4);
                     if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                     {
                         perror("sendto() ERROR");
@@ -155,12 +154,14 @@ void *photoSender(void *data)
 
                     for (int i = 0; i < size - 1; ++i)
                     {
-                        strcpy(buffer, fileMessage.sendPackage(i));
+                        
                         int bufferSize;
                         if (i == size - 1)
                             bufferSize = fileMessage.get_last_package_size();
                         else
                             bufferSize = fileMessage.get_package_size();
+
+                        memcpy(buffer, fileMessage.sendPackage(i),bufferSize);    
                         if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                         {
                             perror("sendto() ERROR");
@@ -169,6 +170,7 @@ void *photoSender(void *data)
 
                         memset(buffer, 0, sizeof(buffer));
                     }
+                    pthread_mutex_unlock(&mutexIpv4);
                     while (1)
                     {
                         if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto4), &len4) < 0)
@@ -176,6 +178,7 @@ void *photoSender(void *data)
                             perror("recvfrom() ERROR");
                             exit(1);
                         }
+
                         if (buffer[0] == DATA_ACK)
                         {
                             memset(buffer, 0, sizeof(buffer));
@@ -189,19 +192,21 @@ void *photoSender(void *data)
                                 bufferSize = fileMessage.get_last_package_size();
                             else
                                 bufferSize = fileMessage.get_package_size();
-                            strcpy(buffer, fileMessage.sendPackage(packageNr));
+                            memcpy(buffer, fileMessage.sendPackage(packageNr),bufferSize);
+                            pthread_mutex_lock(&mutexIpv4);
                             if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                             {
                                 perror("sendto() ERROR");
                                 exit(5);
                             }
+                            pthread_mutex_unlock(&mutexIpv4);
                             memset(buffer, 0, sizeof(buffer));
                         }
                     }
 
-                    pthread_mutex_unlock(&mutexIpv4);
+                    
                 }
-            }
+            
             sleep(SEND_PHOTO_INTERVAL);
         }
     }
@@ -244,8 +249,6 @@ const int getSocket(bool ipv6)
 
 void *listener(void *data)
 {
-
-    //sockaddr_in *gate = (sockaddr_in *)data;
     bool *ipv6 = (bool *)data;
 
     const int socket_ = getSocket(*ipv6);
@@ -257,7 +260,6 @@ void *listener(void *data)
     }
     socklen_t len4 = sizeof(gate4);
     socklen_t len6 = sizeof(gate6);
-    // char zeroAdress[128] = {"0.0.0.0"};
     char gateAdress[ADDRESS_SIZE] = {};
 
     if (*ipv6)
@@ -351,19 +353,23 @@ void *listener(void *data)
 
                 if (*ipv6)
                 {
+                    pthread_mutex_lock(&mutexIpv6);
                     if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv6);
                 }
                 else
                 {
+                    pthread_mutex_lock(&mutexIpv4);
                     if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv4);
                 }
             }
             else
@@ -380,12 +386,13 @@ void *listener(void *data)
                         isIpv6connected = true;
                         inet_pton(AF_INET6, gateAdress, &gate6.sin6_addr);
                         inet_pton(AF_INET6, gateAdress, &gatePhoto6.sin6_addr);
-
+                        pthread_mutex_lock(&mutexIpv6);
                         if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate6), len4) < 0)
                         {
                             perror("sendto() ERROR");
                             exit(5);
                         }
+                        pthread_mutex_unlock(&mutexIpv6);
                     }
                     else
                     {
@@ -393,13 +400,14 @@ void *listener(void *data)
                         isIpv4connected = true;
                         inet_pton(AF_INET, gateAdress, &gate4.sin_addr);
                         inet_pton(AF_INET, gateAdress, &gatePhoto4.sin_addr);
-                        
+                        pthread_mutex_lock(&mutexIpv4);
+                        cout << gateAdress<<endl;
                         if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate4), len4) < 0)
                         {
                             perror("sendto() ERROR");
                             exit(5);
                         }
-                        
+                        pthread_mutex_unlock(&mutexIpv4);
                     }
                     pthread_create(&threads[2], NULL, photoSender, &*ipv6);
                     saveLog("succesful pairing (inst ack)", *ipv6, gateAdress);
@@ -410,11 +418,28 @@ void *listener(void *data)
                 else
                 {
                     buffer[0] = NO_PAIR;
-                    if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate4), len4) < 0)
+                    if (*ipv6)
+                    {
+                     pthread_mutex_lock(&mutexIpv6);
+                    if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv6);
+                    }else
+                    {
+                    pthread_mutex_lock(&mutexIpv4);
+                    if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate4), len4) < 0)
+                    {
+                        perror("sendto() ERROR");
+                        exit(5);
+
+                    }   
+                    pthread_mutex_unlock(&mutexIpv4);  
+                    }
+                    
+                   
                     saveLog("failed pairing", *ipv6, gateAdress);
                     cout << "nieudane parowanie\n";
                     memset(gateAdress, 0, sizeof(gateAdress));
@@ -434,19 +459,23 @@ void *listener(void *data)
 
                 if (*ipv6)
                 {
+                    pthread_mutex_lock(&mutexIpv6);
                     if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv6);
                 }
                 else
                 {
+                    pthread_mutex_lock(&mutexIpv4);
                     if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv4);
                 }
 
                 saveLog("conf ack", *ipv6, gateAdress);
@@ -459,19 +488,23 @@ void *listener(void *data)
                 saveLog("test req", *ipv6, gateAdress);
                 if (*ipv6)
                 {
+                    pthread_mutex_lock(&mutexIpv6);
                     if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv6);
                 }
                 else
                 {
+                    pthread_mutex_lock(&mutexIpv4);
                     if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv4);
                 }
 
                 saveLog("test ack", *ipv6, gateAdress);
@@ -487,23 +520,26 @@ void *listener(void *data)
                 if (*ipv6)
                 {
                     remove("gateAdress6.config");
-
+                    pthread_mutex_lock(&mutexIpv6);
                     if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv6);
                     isIpv6connected = false;
                     pthread_cond_signal(&ipv4_cond);
                 }
                 else
                 {
                     remove("gateAdress4.config");
+                    pthread_mutex_lock(&mutexIpv4);
                     if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
+                    pthread_mutex_unlock(&mutexIpv4);
                     isIpv4connected = false;
                     pthread_cond_signal(&ipv6_cond);
                 }
@@ -530,19 +566,23 @@ void *listener(void *data)
 
             if (*ipv6)
             {
+                pthread_mutex_lock(&mutexIpv6);
                 if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate6), len6) < 0)
                 {
                     perror("sendto() ERROR");
                     exit(5);
                 }
+                pthread_mutex_unlock(&mutexIpv6);
             }
             else
             {
+                pthread_mutex_lock(&mutexIpv4);
                 if (sendto(socket_, buffer, strlen(buffer), 0, (struct sockaddr *)(&gate4), len4) < 0)
                 {
                     perror("sendto() ERROR");
                     exit(5);
                 }
+                pthread_mutex_unlock(&mutexIpv4);
             }
 
             memset(buffer, 0, sizeof(buffer));
@@ -586,4 +626,4 @@ int main(int argc, char *argv[])
         ;
     return 0;
 }
-// gcc camera.cpp -g -Wall -pthread -o camera -lstdc++ && ./camera 6666 6667
+// gcc camera.cpp -g -Wall -pthread -o camera -lstdc++ && ./camera 6666 6667 6668
