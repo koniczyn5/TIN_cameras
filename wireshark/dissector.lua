@@ -38,7 +38,7 @@ function cameralink_proto.dissector(buffer,pinfo,tree)
     elseif msg_type == 5 then
 	subtree:add(buffer(0,1),"INST_REQ")
         pinfo.cols.info:append("INST_REQ")
-	subtree:add(buffer(0,1),"Password: " .. buffer(1,4)
+	subtree:add(buffer(0,1),"Password: " .. buffer(1,4))
     elseif msg_type == 6 then
 	subtree:add(buffer(0,1),"INST_ACK")
         pinfo.cols.info:append("INST_ACK")
