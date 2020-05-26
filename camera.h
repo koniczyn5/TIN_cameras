@@ -23,7 +23,6 @@ private:
     float interval;
     float jitter;
     char password[4];
-
 public:
     Camera()
     {
@@ -107,6 +106,7 @@ public:
             ++buffer[1];
         }
     }
+
     bool isConfigured()
     {
         if (resHorizontal > 0 && resVertical > 0 && focalLength > 0 && interval > 0 && jitter > 0)

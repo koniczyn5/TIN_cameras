@@ -27,23 +27,19 @@ pthread_mutex_t mutexIpv6;
 pthread_t threads[NUM_THREADS];
 struct sockaddr_in gate4
 {
-    .sin_family = AF_INET,
-    .sin_port = htons(gatePort4)
+    .sin_family = AF_INET
 };
 struct sockaddr_in gatePhoto4
 {
-    .sin_family = AF_INET,
-    .sin_port = htons(gatePhotoPort)
+    .sin_family = AF_INET
 };
 struct sockaddr_in6 gate6
 {
-    .sin6_family = AF_INET6,
-    .sin6_port = htons(gatePort6)
+    .sin6_family = AF_INET6
 };
 struct sockaddr_in6 gatePhoto6
 {
-    .sin6_family = AF_INET6,
-    .sin6_port = htons(gatePhotoPort)
+    .sin6_family = AF_INET6
 };
 void saveLog(string logText, bool ipv6, string ipAdress,bool photoSender)
 {
@@ -93,11 +89,11 @@ void *photoSender(void *data)
             }
             memset(buffer, 0, sizeof(buffer));
             int size = fileMessage.get_package_amount();
-            for (int i = 0; i < size; ++i)
+            for (int i = 1; i <= size; ++i)
             {
                 
                 int bufferSize;
-                if (i == size - 1)
+                if (i == size)
                     bufferSize = fileMessage.get_last_package_size();
                 else
                     bufferSize = fileMessage.get_package_size();
@@ -126,7 +122,7 @@ void *photoSender(void *data)
                 {
                     int packageNr = buffer[1];
                     int bufferSize;
-                    if (packageNr == size - 1)
+                    if (packageNr == size)
                         bufferSize = fileMessage.get_last_package_size();
                     else
                         bufferSize = fileMessage.get_package_size();
@@ -174,11 +170,11 @@ void *photoSender(void *data)
                     memset(buffer, 0, sizeof(buffer));
                     int size = fileMessage.get_package_amount();
 
-                    for (int i = 0; i < size - 1; ++i)
+                    for (int i = 1; i <= size; ++i)
                     {
                         
                         int bufferSize;
-                        if (i == size - 1)
+                        if (i == size)
                             bufferSize = fileMessage.get_last_package_size();
                         else
                             bufferSize = fileMessage.get_package_size();
@@ -215,7 +211,7 @@ void *photoSender(void *data)
                             saveLog( "DATA_RQT recived", *ipv6, gateAdress,true);    
                             int packageNr = buffer[1];
                             int bufferSize;
-                            if (packageNr == size - 1)
+                            if (packageNr == size)
                                 bufferSize = fileMessage.get_last_package_size();
                             else
                                 bufferSize = fileMessage.get_package_size();
@@ -240,7 +236,6 @@ void *photoSender(void *data)
             sleep(SEND_PHOTO_INTERVAL);
         }
     }
-
     pthread_exit(NULL);
 }
 
@@ -561,7 +556,7 @@ void *listener(void *data)
                     pthread_cond_signal(&ipv6_cond);
                 }
 
-                saveLog("disc ack", true, gateAdress,false);
+                saveLog("disc ack", *ipv6, gateAdress,false);
 
                 memset(buffer, 0, sizeof(buffer));
             }
