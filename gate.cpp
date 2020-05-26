@@ -445,9 +445,9 @@ int main (int argc, char *argv[])
             exit(1);
     }
 
-    //testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
+    testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
 
-    //configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
+    configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
 
     photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
 
