@@ -22,7 +22,6 @@
 #include <algorithm> //std::remove
 #include <vector>
 
-#include "message.cpp"
 #include "fileMessage.cpp"
 
 void saveLog(std::string logText, const struct sockaddr *ai_addr, int port);

@@ -9,10 +9,11 @@
 #define PASSWORD "okon"
 #define IPSTRLEN 40
 #define RECVPORT 6668
-#define PACKETSIZE 512
+#define PACKETSIZE 500
 #define TIMEOUT 1
 #define FAILNUM 3
 #define PHOTOINTERVAL 5.0
+#define PHOTOEXTENTION ".png"
 
 std::string ipToString(const struct sockaddr *ipAddress)
 {
@@ -295,7 +296,7 @@ void photoReceiver(int socketFd, sockaddr *ai_addr, socklen_t ai_addrlen, int po
     std::replace(fileName.begin(), fileName.end(), ' ', '_');
     std::replace(fileName.begin(), fileName.end(), ':', '-');
     std::replace(fileName.begin(), fileName.end(), '.', '-');
-    fileName = fileName + ".txt";
+    fileName = fileName + PHOTOEXTENTION;
     photoFile.open(fileName, std::fstream::in | std::fstream::out | std::fstream::trunc);
     if(!photoFile.is_open())
     {
@@ -466,9 +467,12 @@ int main (int argc, char *argv[])
 //        photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
 //    }
 
+
     std::string input;
     while(true)
     {
+        std::cout << "Enter Command:\n";
+        std::cout << "use 'help' for list of commands\n";
         getline(std::cin, input);
         if(input == "test")
             testConnection(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
@@ -477,17 +481,24 @@ int main (int argc, char *argv[])
             if(!installCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2])))
                 exit(1);
         }
+        else if(input == "configure")
+        {
+            configureCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2]));
+        }
         else if(input == "disconnect")
         {
             if(!disconnectCamera(connectSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, atoi(argv[2])))
                 exit(1);
         }
         else if(input == "photo")
-            photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
+            while(true)
+                photoReceiver(recvSocketFd, cameraInfo->ai_addr, cameraInfo->ai_addrlen, RECVPORT, PHOTOINTERVAL);
         else if(input == "quit")
             break;
+        else if(input == "help")
+            std::cout<< "Possible commands: test\n, install\n, configure\n, disconnect\n, photo\n, quit\n";
         else
-            std::cout << "Unknown command\n";
+            std::cout << "Unknown command, use 'help' for a list of commands\n";
     }
 
     freeaddrinfo(cameraInfo);
