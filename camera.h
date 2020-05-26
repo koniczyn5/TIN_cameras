@@ -23,6 +23,7 @@ private:
     float interval;
     float jitter;
     char password[4];
+
 public:
     Camera()
     {
@@ -72,9 +73,9 @@ public:
         cout << "focalLength=" << focalLength << endl;
         cout << "interval=" << interval << endl;
         cout << "jitter=" << jitter << endl;
-        
-        string data= to_string(resHorizontal) + "\n" + to_string(resVertical) + "\n" + to_string(focalLength) + "\n" + to_string(interval) +"\n" + to_string(jitter);
-        saveToFile("camera.config",data);
+
+        string data = to_string(resHorizontal) + "\n" + to_string(resVertical) + "\n" + to_string(focalLength) + "\n" + to_string(interval) + "\n" + to_string(jitter);
+        saveToFile("camera.config", data);
     }
     void test(char buffer[])
     {
@@ -106,6 +107,13 @@ public:
             ++buffer[1];
         }
     }
+    bool isConfigured()
+    {
+        if (resHorizontal > 0 && resVertical > 0 && focalLength > 0 && interval > 0 && jitter > 0)
+            return true;
+        else
+            return false;
+    }
     void saveToFile(string filename, string data)
     {
         fstream file;
@@ -118,25 +126,25 @@ public:
         string data;
         fstream file;
         file.open(filename);
-        if(file.is_open())
+        if (file.is_open())
         {
-        getline(file,data);
-        resHorizontal = stoi(data);
-        getline(file,data);
-        resVertical = stoi(data);
-        getline(file,data);
-        focalLength = stoi(data);
-        getline(file,data);
-        interval = stoi(data);
-        getline(file,data);
-        jitter = stoi(data);
-        file.close();
+            getline(file, data);
+            resHorizontal = stoi(data);
+            getline(file, data);
+            resVertical = stoi(data);
+            getline(file, data);
+            focalLength = stoi(data);
+            getline(file, data);
+            interval = stoi(data);
+            getline(file, data);
+            jitter = stoi(data);
+            file.close();
 
-        cout << "resHorizonta=" << resHorizontal << endl;
-        cout << "resVertical=" << resVertical << endl;
-        cout << "focalLength=" << focalLength << endl;
-        cout << "interval=" << interval << endl;
-        cout << "jitter=" << jitter << endl;
+            cout << "resHorizonta=" << resHorizontal << endl;
+            cout << "resVertical=" << resVertical << endl;
+            cout << "focalLength=" << focalLength << endl;
+            cout << "interval=" << interval << endl;
+            cout << "jitter=" << jitter << endl;
         }
     }
     bool loadPassword(string filename)
@@ -144,12 +152,13 @@ public:
         //string data[4];
         fstream file;
         file.open(filename);
-        if(!file.is_open())return 0;
+        if (!file.is_open())
+            return 0;
         file >> password;
-        
+
         //strcpy(password,data)
         file.close();
-        cout << password<<endl;
+        cout << password << endl;
         return 1;
     }
 };
