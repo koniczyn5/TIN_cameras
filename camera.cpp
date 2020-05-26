@@ -15,9 +15,9 @@
 #define ADDRESS_SIZE 46
 #define TIMEOUT 20
 Camera camera;
-int gatePort4=6666;
-int gatePort6=6667;
-int gatePhotoPort=6668;
+int gatePort4 = 6666;
+int gatePort6 = 6667;
+int gatePhotoPort = 6668;
 bool isIpv6connected = false;
 bool isIpv4connected = false;
 pthread_cond_t ipv4_cond;
@@ -42,7 +42,7 @@ struct sockaddr_in6 gatePhoto6
 {
     .sin6_family = AF_INET6
 };
-void saveLog(string logText, bool ipv6, string ipAdress,bool photoSender)
+void saveLog(string logText, bool ipv6, string ipAdress, bool photoSender)
 {
     fstream file;
     time_t now = time(0);
@@ -52,9 +52,12 @@ void saveLog(string logText, bool ipv6, string ipAdress,bool photoSender)
     log = log + logText + "\n";
     cout << log;
     string port;
-    if(photoSender == true) port = to_string(gatePhotoPort);
-    else if(ipv6 == true) port = to_string(gatePort6);
-    else port = to_string(gatePort4);
+    if (photoSender == true)
+        port = to_string(gatePhotoPort);
+    else if (ipv6 == true)
+        port = to_string(gatePort6);
+    else
+        port = to_string(gatePort4);
     string filename = "cameraLog" + port + ".log";
     file.open(filename, fstream::app);
     file << log;
@@ -74,102 +77,102 @@ void *photoSender(void *data)
         while (true)
         {
             //send photo
-            while(!camera.isConfigured());
+            while (!camera.isConfigured())
+                ;
             std::fstream file;
             file.open(filename, std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
             FileMessage fileMessage(DATA_MSG, file, filename, sizeof(filename));
-            
-            if (fileMessage.get_package_amount()>0)
+
+            if (fileMessage.get_package_amount() > 0)
             {
-            pthread_mutex_lock(&mutexIpv6);
-            char *temp = fileMessage.sendFileInfo();
-            memcpy(buffer, temp,fileMessage.get_file_name_size()+9);
-            delete[] temp;
-            if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
-            {
-                perror("sendto() ERROR");
-                exit(5);
-            }
-            memset(buffer, 0, sizeof(buffer));
-            int size = fileMessage.get_package_amount();
-            for (int i = 1; i <= size; ++i)
-            {
-                
-                int bufferSize;
-                if (i == size)
-                    bufferSize = fileMessage.get_last_package_size();
-                else
-                    bufferSize = fileMessage.get_package_size();
-                    char *temp = fileMessage.sendPackage(i);
-                memcpy(buffer, temp,bufferSize);
+                pthread_mutex_lock(&mutexIpv6);
+                char *temp = fileMessage.sendFileInfo();
+                memcpy(buffer, temp, fileMessage.get_file_name_size() + 13);
                 delete[] temp;
-                if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
+                if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
                 {
                     perror("sendto() ERROR");
                     exit(5);
                 }
                 memset(buffer, 0, sizeof(buffer));
-            }
-            pthread_mutex_unlock(&mutexIpv6);
-            while (true)
-            {
-                if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto6), &len6) < 0)
+                int size = fileMessage.get_package_amount();
+                for (int i = 1; i <= size; ++i)
                 {
-                    perror("recvfrom() ERROR");
-                    exit(1);
-                }
-                if (buffer[0] == DATA_ACK)
-                {
-                    memset(buffer, 0, sizeof(buffer));
-                    break;
-                }
-                else if (buffer[0] == DATA_RQT)
-                {
-                    int *packageNr =(int*)(&buffer[1]);
+
                     int bufferSize;
-                    if (*packageNr == size)
+                    if (i == size)
                         bufferSize = fileMessage.get_last_package_size();
                     else
                         bufferSize = fileMessage.get_package_size();
-                        char *temp = fileMessage.sendPackage(*packageNr);
-                    memcpy(buffer, temp,bufferSize);
+                    char *temp = fileMessage.sendPackage(i);
+                    memcpy(buffer, temp, bufferSize);
                     delete[] temp;
-                    pthread_mutex_lock(&mutexIpv6);
-                    if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
+                    if (sendto(socket_, buffer, bufferSize + 9, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
-                    pthread_mutex_unlock(&mutexIpv6);
-                    delete packageNr;
                     memset(buffer, 0, sizeof(buffer));
                 }
+                pthread_mutex_unlock(&mutexIpv6);
+                while (true)
+                {
+                    if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto6), &len6) < 0)
+                    {
+                        perror("recvfrom() ERROR");
+                        exit(1);
+                    }
+                    if (buffer[0] == DATA_ACK)
+                    {
+                        memset(buffer, 0, sizeof(buffer));
+                        break;
+                    }
+                    else if (buffer[0] == DATA_RQT)
+                    {
 
-            }
+                        int *packageNr = (int *)(&buffer[1]);
+                        int bufferSize;
+                        if (*packageNr == 0)
+                            bufferSize = fileMessage.get_file_name_size() + 4;
+                        else if (*packageNr == size)
+                            bufferSize = fileMessage.get_last_package_size();
+                        else
+                            bufferSize = fileMessage.get_package_size();
+                        char *temp = fileMessage.sendPackage(*packageNr);
+                        memcpy(buffer, temp, bufferSize);
+                        delete[] temp;
+                        pthread_mutex_lock(&mutexIpv6);
+                        if (sendto(socket_, buffer, bufferSize + 9, 0, (struct sockaddr *)(&gatePhoto6), len6) < 0)
+                        {
+                            perror("sendto() ERROR");
+                            exit(5);
+                        }
+                        pthread_mutex_unlock(&mutexIpv6);
+                        delete packageNr;
+                        memset(buffer, 0, sizeof(buffer));
+                    }
+                }
             }
             sleep(SEND_PHOTO_INTERVAL);
         }
     }
     else
     {
-       
 
         struct timeval timeout;
         timeout.tv_sec = TIMEOUT;
         timeout.tv_usec = 0;
- const int socket_ = socket(AF_INET, SOCK_DGRAM, 0);
-    if(socket_ < 0)
-    {
-        perror("Open socket");
-        exit(5);
-    }
-    if(setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
+        const int socket_ = socket(AF_INET, SOCK_DGRAM, 0);
+        if (socket_ < 0)
         {
-        perror("Setsockopt()");
-        exit(5);
+            perror("Open socket");
+            exit(5);
         }
-
-
+        if (setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(struct timeval)) < 0)
+        {
+            perror("Setsockopt()");
+            exit(5);
+        }
 
         socklen_t len4 = sizeof(gate4);
         //while (true)
@@ -177,104 +180,102 @@ void *photoSender(void *data)
             char gateAdress[ADDRESS_SIZE];
             inet_ntop(AF_INET, &gatePhoto4.sin_addr, gateAdress, sizeof(gateAdress));
             //send photo
-            while(!camera.isConfigured());
+            while (!camera.isConfigured())
+                ;
             std::fstream file;
             file.open(filename, std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
             FileMessage fileMessage(DATA_MSG, file, filename, sizeof(filename));
-            
-                
-                if (fileMessage.get_package_amount()>0)
+
+            if (fileMessage.get_package_amount() > 0)
+            {
+                char *temp = fileMessage.sendFileInfo();
+                memcpy(buffer, temp, fileMessage.get_file_name_size() + 13);
+                delete[] temp;
+                pthread_mutex_lock(&mutexIpv4);
+                saveLog("sending photo file info", *ipv6, gateAdress, true);
+                if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                 {
-                    char *temp = fileMessage.sendFileInfo();
-                    memcpy(buffer, temp,fileMessage.get_file_name_size()+9);
+                    perror("sendto() ERROR");
+                    exit(5);
+                }
+                memset(buffer, 0, sizeof(buffer));
+                int size = fileMessage.get_package_amount();
+
+                for (int i = 1; i <= size; ++i)
+                {
+
+                    int bufferSize;
+                    if (i == size)
+                        bufferSize = fileMessage.get_last_package_size();
+                    else
+                        bufferSize = fileMessage.get_package_size();
+                    char *temp = fileMessage.sendPackage(i);
+                    memcpy(buffer, temp, bufferSize);
                     delete[] temp;
-                    pthread_mutex_lock(&mutexIpv4);
-                    saveLog("sending photo file info", *ipv6, gateAdress,true);
-                    if (sendto(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
+                    string logText = "sending photo file  package nr " + to_string(i) + " ";
+                    saveLog(logText, *ipv6, gateAdress, true);
+                    if (sendto(socket_, buffer, bufferSize + 9, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                     {
                         perror("sendto() ERROR");
                         exit(5);
                     }
-                    memset(buffer, 0, sizeof(buffer));
-                    int size = fileMessage.get_package_amount();
 
-                    for (int i = 1; i <= size; ++i)
+                    memset(buffer, 0, sizeof(buffer));
+                }
+                pthread_mutex_unlock(&mutexIpv4);
+                while (1)
+                {
+                    saveLog("waiting for data ACK", *ipv6, gateAdress, true);
+                    if (recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto4), &len4) < 0)
                     {
-                        
+                        if (errno == EAGAIN || errno == EWOULDBLOCK)
+                        {
+                            saveLog("Recv for data_ack timout ", *ipv6, gateAdress, true);
+                        }
+                        perror("recvfrom() ERROR");
+                        break;
+                    }
+
+                    if (buffer[0] == DATA_ACK)
+                    {
+                        saveLog("DATA_ACK recived", *ipv6, gateAdress, true);
+                        memset(buffer, 0, sizeof(buffer));
+                        break;
+                    }
+                    else if (buffer[0] == DATA_RQT)
+                    {
+                        saveLog("DATA_RQT recived", *ipv6, gateAdress, true);
+                        int *packageNr = (int *)(&buffer[1]);
                         int bufferSize;
-                        if (i == size)
+                        if (*packageNr == 0)
+                            bufferSize = fileMessage.get_file_name_size() + 4;
+                        else if (*packageNr == size)
                             bufferSize = fileMessage.get_last_package_size();
                         else
                             bufferSize = fileMessage.get_package_size();
-                        char *temp = fileMessage.sendPackage(i);
-                        memcpy(buffer, temp,bufferSize);
+                        char *temp = fileMessage.sendPackage(*packageNr);
+                        memcpy(buffer, temp, bufferSize);
                         delete[] temp;
-                        string logText ="sending photo file  package nr " + to_string(i) + " ";
-                        saveLog( logText, *ipv6, gateAdress,true);    
-                        if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
+                        string logText = "sending photo file  package nr " + to_string(*packageNr) + " ";
+                        saveLog(logText, *ipv6, gateAdress, true);
+                        pthread_mutex_lock(&mutexIpv4);
+
+                        if (sendto(socket_, buffer, bufferSize + 9, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
                         {
                             perror("sendto() ERROR");
                             exit(5);
                         }
-
+                        pthread_mutex_unlock(&mutexIpv4);
                         memset(buffer, 0, sizeof(buffer));
                     }
-                    pthread_mutex_unlock(&mutexIpv4);
-                    while (1)
-                    {
-                         saveLog( "waiting for data ACK", *ipv6, gateAdress,true);  
-                        if ( recvfrom(socket_, buffer, sizeof(buffer), 0, (struct sockaddr *)&(gatePhoto4), &len4) < 0)
-                        {
-                            if(errno == EAGAIN || errno == EWOULDBLOCK)
-                            {
-                            saveLog("Recv for data_ack timout ",*ipv6,gateAdress,true);
-
-                            }
-                            perror("recvfrom() ERROR");
-                            break;
-                        }
-
-                        if (buffer[0] == DATA_ACK)
-                        {
-                            saveLog( "DATA_ACK recived", *ipv6, gateAdress,true);  
-                            memset(buffer, 0, sizeof(buffer));
-                            break;
-                        }
-                        else if (buffer[0] == DATA_RQT)
-                        {
-                            saveLog( "DATA_RQT recived", *ipv6, gateAdress,true);    
-                            int *packageNr =(int*)(&buffer[1]);
-                            int bufferSize;
-                            if (*packageNr == size)
-                                bufferSize = fileMessage.get_last_package_size();
-                            else
-                                bufferSize = fileMessage.get_package_size();
-                                char *temp = fileMessage.sendPackage(*packageNr);
-                            memcpy(buffer, temp,bufferSize);
-                            delete[] temp;
-                             string logText ="sending photo file  package nr " + to_string(*packageNr) + " ";
-                            saveLog( logText, *ipv6, gateAdress,true);    
-                            pthread_mutex_lock(&mutexIpv4);
-
-                            if (sendto(socket_, buffer, bufferSize, 0, (struct sockaddr *)(&gatePhoto4), len4) < 0)
-                            {
-                                perror("sendto() ERROR");
-                                exit(5);
-                            }
-                            pthread_mutex_unlock(&mutexIpv4);
-                            memset(buffer, 0, sizeof(buffer));
-                        }
-                    }
-
-                    
                 }
-            saveLog( "waiting photo interval", *ipv6, gateAdress,true);  
+            }
+            saveLog("waiting photo interval", *ipv6, gateAdress, true);
             sleep(SEND_PHOTO_INTERVAL);
         }
     }
     pthread_exit(NULL);
 }
-
 
 void loadGateAdressFromFile(string filename, char *gateAdress)
 {
@@ -394,7 +395,7 @@ void *listener(void *data)
 
         if (buffer[0] == INST_REQ)
         {
-            saveLog("inst req", *ipv6, from,false);
+            saveLog("inst req", *ipv6, from, false);
             if (strcmp(gateAdress, ""))
             {
                 buffer[0] = IS_PAIR;
@@ -449,7 +450,7 @@ void *listener(void *data)
                         inet_pton(AF_INET, gateAdress, &gate4.sin_addr);
                         inet_pton(AF_INET, gateAdress, &gatePhoto4.sin_addr);
                         pthread_mutex_lock(&mutexIpv4);
-                        cout << gateAdress<<endl;
+                        cout << gateAdress << endl;
                         if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate4), len4) < 0)
                         {
                             perror("sendto() ERROR");
@@ -458,7 +459,7 @@ void *listener(void *data)
                         pthread_mutex_unlock(&mutexIpv4);
                     }
                     pthread_create(&threads[2], NULL, photoSender, &*ipv6);
-                    saveLog("succesful pairing (inst ack)", *ipv6, gateAdress,false);
+                    saveLog("succesful pairing (inst ack)", *ipv6, gateAdress, false);
                     cout << "udane parowanie\n";
                     file.write(gateAdress, sizeof(gateAdress));
                     file.close();
@@ -468,27 +469,26 @@ void *listener(void *data)
                     buffer[0] = NO_PAIR;
                     if (*ipv6)
                     {
-                     pthread_mutex_lock(&mutexIpv6);
-                    if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate6), len6) < 0)
-                    {
-                        perror("sendto() ERROR");
-                        exit(5);
+                        pthread_mutex_lock(&mutexIpv6);
+                        if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate6), len6) < 0)
+                        {
+                            perror("sendto() ERROR");
+                            exit(5);
+                        }
+                        pthread_mutex_unlock(&mutexIpv6);
                     }
-                    pthread_mutex_unlock(&mutexIpv6);
-                    }else
+                    else
                     {
-                    pthread_mutex_lock(&mutexIpv4);
-                    if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate4), len4) < 0)
-                    {
-                        perror("sendto() ERROR");
-                        exit(5);
+                        pthread_mutex_lock(&mutexIpv4);
+                        if (sendto(socket_, buffer, 1, 0, (struct sockaddr *)(&gate4), len4) < 0)
+                        {
+                            perror("sendto() ERROR");
+                            exit(5);
+                        }
+                        pthread_mutex_unlock(&mutexIpv4);
+                    }
 
-                    }   
-                    pthread_mutex_unlock(&mutexIpv4);  
-                    }
-                    
-                   
-                    saveLog("failed pairing", *ipv6, gateAdress,false);
+                    saveLog("failed pairing", *ipv6, gateAdress, false);
                     cout << "nieudane parowanie\n";
                     memset(gateAdress, 0, sizeof(gateAdress));
                 }
@@ -500,7 +500,7 @@ void *listener(void *data)
             if (buffer[0] == CONF_REQ)
             {
 
-                saveLog("conf req", *ipv6, gateAdress,false);
+                saveLog("conf req", *ipv6, gateAdress, false);
                 camera.configure(buffer);
                 memset(buffer, 0, sizeof(buffer));
                 buffer[0] = CONF_ACK;
@@ -526,14 +526,14 @@ void *listener(void *data)
                     pthread_mutex_unlock(&mutexIpv4);
                 }
 
-                saveLog("conf ack", *ipv6, gateAdress,false);
+                saveLog("conf ack", *ipv6, gateAdress, false);
                 memset(buffer, 0, sizeof(buffer));
             }
             else if (buffer[0] == TEST_REQ)
             {
                 memset(buffer, 0, sizeof(buffer));
                 camera.test(buffer);
-                saveLog("test req", *ipv6, gateAdress,false);
+                saveLog("test req", *ipv6, gateAdress, false);
                 if (*ipv6)
                 {
                     pthread_mutex_lock(&mutexIpv6);
@@ -555,12 +555,12 @@ void *listener(void *data)
                     pthread_mutex_unlock(&mutexIpv4);
                 }
 
-                saveLog("test ack", *ipv6, gateAdress,false);
+                saveLog("test ack", *ipv6, gateAdress, false);
                 memset(buffer, 0, sizeof(buffer));
             }
             else if (buffer[0] == DISC_REQ)
             {
-                saveLog("disc req", *ipv6, gateAdress,false);
+                saveLog("disc req", *ipv6, gateAdress, false);
                 buffer[0] = DISC_ACK;
                 memcpy(gateAdress, "", sizeof(gateAdress));
                 ifstream file;
@@ -592,7 +592,7 @@ void *listener(void *data)
                     pthread_cond_signal(&ipv6_cond);
                 }
 
-                saveLog("disc ack", *ipv6, gateAdress,false);
+                saveLog("disc ack", *ipv6, gateAdress, false);
 
                 memset(buffer, 0, sizeof(buffer));
             }
@@ -608,7 +608,7 @@ void *listener(void *data)
                 inet_ntop(AF_INET, &gate4.sin_addr, gateAdress, sizeof(gateAdress));
             }
 
-            saveLog("no pair", *ipv6, gateAdress,false);
+            saveLog("no pair", *ipv6, gateAdress, false);
             memcpy(gateAdress, "", sizeof(gateAdress));
             buffer[0] = NO_PAIR;
 
@@ -668,7 +668,7 @@ int main(int argc, char *argv[])
     camera.loadCameraConfig("camera.config");
     if (!camera.loadPassword("password"))
     {
-        cout << "password not found"<<endl;
+        cout << "password not found" << endl;
         return 0;
     }
     pthread_create(&threads[0], NULL, listener, &ipv4);
